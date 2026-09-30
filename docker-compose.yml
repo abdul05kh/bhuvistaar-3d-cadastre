@@ -25,11 +25,26 @@ services:
       - DATABASE_URL=postgresql+psycopg://postgres:postgrespassword@db:5432/bhuvistaar_cadastre
       - CANONICAL_STORAGE_SRID=32643
       - CANONICAL_STORAGE_CRS=EPSG:32643
+      - APP_ENV=demo
+      - DEMO_MODE=true
+      - AI_MODE=LOCAL
+      - AUTHORIZATION_MODE=SIMULATED_PROTOTYPE
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: bhuvistaar-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
 volumes:
   postgis_data:
+

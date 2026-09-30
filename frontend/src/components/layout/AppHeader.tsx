@@ -1,6 +1,6 @@
 import React from 'react';
-import { Shield, AlertCircle, CheckCircle, RotateCcw, PlayCircle } from 'lucide-react';
-import { UnitStatus } from '../../types';
+import { Shield, AlertCircle, CheckCircle, RotateCcw, PlayCircle, Server, Download, UserCheck } from 'lucide-react';
+import { UnitStatus, OperationalRole } from '../../types';
 
 interface AppHeaderProps {
   ulpin: string;
@@ -9,11 +9,15 @@ interface AppHeaderProps {
   candidateCount?: number;
   anomalyCount?: number;
   disagreementCount?: number;
+  activeRole?: OperationalRole;
+  onChangeRole?: (role: OperationalRole) => void;
   onResetDemo: () => void;
   onToggleDemoGuide: () => void;
   onOpenTraceOrigin?: () => void;
   onOpenModelCards?: () => void;
   onOpenCompareModels?: () => void;
+  onOpenSystemReadiness?: () => void;
+  onOpenExportModal?: () => void;
   isDemoGuideOpen: boolean;
   isLoading: boolean;
 }
@@ -25,16 +29,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   candidateCount = 0,
   anomalyCount = 0,
   disagreementCount = 0,
+  activeRole = 'ADMIN',
+  onChangeRole,
   onResetDemo,
   onToggleDemoGuide,
   onOpenTraceOrigin,
   onOpenModelCards,
   onOpenCompareModels,
+  onOpenSystemReadiness,
+  onOpenExportModal,
   isDemoGuideOpen,
   isLoading,
 }) => {
   const isApproved = status === 'APPROVED';
   const isBlocked = blockerCount > 0;
+
 
   return (
     <header style={{
@@ -118,12 +127,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           STATE: {status}
         </span>
 
-        {/* Simulated Actor Badge */}
+        {/* Simulated Actor & Role Switcher */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '5px',
-          padding: '3px 8px',
+          gap: '6px',
+          padding: '2px 6px',
           borderRadius: '4px',
           backgroundColor: 'rgba(51, 65, 85, 0.4)',
           border: '1px solid rgba(51, 65, 85, 0.6)',
@@ -131,7 +140,27 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           color: 'var(--text-secondary)'
         }} title="Simulated prototype actor context (No fake officer identities)">
           <Shield size={12} style={{ color: 'var(--color-primary)' }} />
-          <span>SIMULATED_PROTOTYPE</span>
+          {onChangeRole ? (
+            <select
+              value={activeRole}
+              onChange={(e) => onChangeRole(e.target.value as OperationalRole)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#38bdf8',
+                fontWeight: 600,
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="VIEWER" style={{ background: '#1e293b' }}>VIEWER</option>
+              <option value="REVIEWER" style={{ background: '#1e293b' }}>REVIEWER</option>
+              <option value="APPROVER" style={{ background: '#1e293b' }}>APPROVER</option>
+              <option value="ADMIN" style={{ background: '#1e293b' }}>ADMIN (FULL)</option>
+            </select>
+          ) : (
+            <span>SIMULATED_PROTOTYPE</span>
+          )}
         </div>
 
         {/* AI Intelligence Badge */}
@@ -156,7 +185,30 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onOpenSystemReadiness && (
+            <button
+              className="btn btn-sm"
+              onClick={onOpenSystemReadiness}
+              title="System Readiness Matrix, Data Integrity & Observability"
+              style={{ borderColor: 'rgba(56, 189, 248, 0.4)', color: '#38bdf8' }}
+            >
+              <Server size={12} />
+              Readiness
+            </button>
+          )}
+          {onOpenExportModal && (
+            <button
+              className="btn btn-sm"
+              onClick={onOpenExportModal}
+              title="Interoperability Export (JSON, GeoJSON, 3D OBJ & Roundtrip)"
+              style={{ borderColor: 'rgba(34, 197, 94, 0.4)', color: '#4ade80' }}
+            >
+              <Download size={12} />
+              Export
+            </button>
+          )}
           {onOpenCompareModels && (
+
             <button
               className="btn btn-sm"
               onClick={onOpenCompareModels}

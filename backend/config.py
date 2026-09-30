@@ -21,7 +21,20 @@ class Settings(BaseSettings):
     COORDINATE_PRECISION_DECIMALS: int = Field(default=3, description="Coordinate rounding precision (1mm)")
     
     # Authorization mode banner
-    AUTHORIZATION_MODE: str = "SIMULATED_PROTOTYPE"
+    AUTHORIZATION_MODE: str = Field(default="SIMULATED_PROTOTYPE", description="Simulation banner - no real officer credentials")
+    AUTH_MODE: str = Field(default="SIMULATED_PROTOTYPE", description="Alias for AUTHORIZATION_MODE")
+
+    # Operational Deployment & Environment Configuration (Slice 5)
+    APP_ENV: str = Field(default="demo", description="Runtime environment: demo, development, test, production_simulation")
+    API_BASE_URL: str = Field(default="http://127.0.0.1:8000", description="Backend API base URL")
+    FRONTEND_BASE_URL: str = Field(default="http://127.0.0.1:5173", description="Frontend base URL")
+    DEMO_MODE: bool = Field(default=True, description="Enable synthetic judge demo scenarios")
+    AI_MODE: str = Field(default="LOCAL", description="AI operational mode: LOCAL, DETERMINISTIC, DISABLED")
+    LOG_LEVEL: str = Field(default="INFO", description="Logging verbosity level")
+    MAX_UPLOAD_SIZE_BYTES: int = Field(default=10 * 1024 * 1024, description="Maximum allowable evidence upload size (10 MB)")
+    STALE_THRESHOLD_SECONDS: int = Field(default=3600, description="Staleness threshold for evidence/validation (seconds)")
+    RULESET_VERSION: str = Field(default="1.0.0", description="Current validation ruleset semantic version")
+    VALIDATOR_VERSION: str = Field(default="1.0.0", description="Current validation engine semantic version")
 
     # AI Intelligence Configuration (Slice 3)
     AI_ASSISTANCE_ENABLED: bool = Field(default=True, description="Feature flag for AI assistance and candidate generation")
@@ -32,3 +45,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

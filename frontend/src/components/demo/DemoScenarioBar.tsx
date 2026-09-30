@@ -86,46 +86,42 @@ export const DemoScenarioBar: React.FC<DemoScenarioBarProps> = ({
         </div>
       </div>
 
-      {/* Quick Scenario Preset Chips */}
+      {/* Quick Scenario Preset Selector */}
       {onSelectScenario && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-            Scenarios:
+            Field Simulation:
           </span>
-          <button
-            className="btn btn-sm"
-            onClick={() => onSelectScenario('flagship')}
-            style={{ fontSize: '10px', padding: '2px 8px' }}
-            title="Flagship: AI candidate proposal with VRT-003 overlap blocker"
+          <select
+            onChange={(e) => onSelectScenario(e.target.value)}
+            defaultValue="defect"
+            style={{
+              backgroundColor: '#111827',
+              border: '1px solid #374151',
+              color: '#38bdf8',
+              fontSize: '11px',
+              padding: '3px 8px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+            title="Execute Controlled Field Simulation Scenario"
           >
-            1. Flagship
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() => onSelectScenario('evidence-conflict')}
-            style={{ fontSize: '10px', padding: '2px 8px' }}
-            title="Evidence Conflict: Discordant architectural vs survey sources"
-          >
-            2. Conflict
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() => onSelectScenario('low-confidence')}
-            style={{ fontSize: '10px', padding: '2px 8px' }}
-            title="Low Confidence: Ambiguous sketch requiring surveyor verification"
-          >
-            3. Low Conf
-          </button>
-          <button
-            className="btn btn-sm"
-            onClick={() => onSelectScenario('vertical-gap')}
-            style={{ fontSize: '10px', padding: '2px 8px' }}
-            title="Vertical Gap: Inter-floor unexplained vertical gap"
-          >
-            4. Gap
-          </button>
+            <option value="defect">1. VRT-003 Overlap (Flagship)</option>
+            <option value="clean">2. Clean 4-Floor Baseline</option>
+            <option value="out_of_parcel">3. TOP-001 Boundary Breach</option>
+            <option value="conflicting_evidence">4. Conflicting Evidence</option>
+            <option value="missing_evidence">5. Missing Evidence</option>
+            <option value="ai_unavailable">6. Offline / AI Unavailable</option>
+            <option value="stale_evidence">7. Stale Evidence Detection</option>
+            <option value="stale_validation">8. Stale Validation Protection</option>
+            <option value="review_rejection">9. Reviewer Rejection</option>
+            <option value="golden_workflow">10. Full Golden Workflow</option>
+            <option value="failure_recovery">11. Interrupted Upload Recovery</option>
+          </select>
         </div>
       )}
+
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {currentStep > 1 && (

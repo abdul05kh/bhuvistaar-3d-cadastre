@@ -80,7 +80,7 @@ class ValidationDisagreementEngine:
 
             # 1. Check CASE D: Human Override
             if cand.status == "REJECTED" or cand.rejection_reason:
-                d_id = f"DISAGREE-HUMAN-{cand.candidate_id[:8]}"
+                d_id = f"DISAGREE-HUMAN-{cand.candidate_id}"
                 expl = (
                     f"Human reviewer rejected proposal for '{cand.level_code}' "
                     f"despite {ai_conf:.2f} ({cand.confidence_band}) AI confidence. "
@@ -111,7 +111,7 @@ class ValidationDisagreementEngine:
 
             # 2. Check CASE A: AI / Validation Disagreement (AI proposed with confidence >= 0.60, but validation blocked)
             if len(blockers) > 0 and ai_conf >= 0.60:
-                d_id = f"DISAGREE-VAL-{cand.candidate_id[:8]}"
+                d_id = f"DISAGREE-VAL-{cand.candidate_id}"
                 rule_names = ", ".join(sorted(list({b.rule_code for b in blockers})))
                 blocker_details = blockers[0].message if blockers else "Validation failed"
                 expl = (
@@ -159,7 +159,7 @@ class ValidationDisagreementEngine:
 
             # 3. Check CASE B: Low AI Confidence / Geometrically Valid
             if ai_conf < 0.60 and len(blockers) == 0:
-                d_id = f"DISAGREE-LOWCONF-{cand.candidate_id[:8]}"
+                d_id = f"DISAGREE-LOWCONF-{cand.candidate_id}"
                 expl = (
                     f"AI assigned low confidence ({ai_conf:.2f}) to '{cand.level_code}' due to weak "
                     f"or incomplete evidence, but deterministic spatial validation verified geometry "
@@ -189,7 +189,7 @@ class ValidationDisagreementEngine:
                 continue
 
             # 4. Check CASE C: Consistent
-            d_id = f"AGREE-{cand.candidate_id[:8]}"
+            d_id = f"AGREE-{cand.candidate_id}"
             expl = (
                 f"AI proposal for '{cand.level_code}' ({ai_conf:.2f} confidence) is "
                 f"geometrically and topologically consistent with deterministic validation rules."

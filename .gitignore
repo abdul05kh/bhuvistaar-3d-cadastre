@@ -45,3 +45,5 @@ htmlcov/
 # Database
 *.sqlite3
 *.db
+backups/
+*.backup

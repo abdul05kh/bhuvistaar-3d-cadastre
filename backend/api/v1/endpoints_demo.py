@@ -14,7 +14,24 @@ from backend.schemas.evidence_contracts import EvidenceRegisterRequest
 from backend.schemas.unit_contracts import UnitGenerateRequest
 
 
+from backend.services.field_simulation_service import FieldSimulationService
+
 router = APIRouter(prefix="/demo", tags=["Demo Controller"])
+
+
+@router.get("/scenarios")
+
+def list_scenarios(db: Session = Depends(get_db)):
+    """List all available field simulation and judge demo scenarios."""
+    service = FieldSimulationService(db)
+    return service.get_catalog()
+
+
+@router.post("/scenarios/{scenario_id}/execute")
+def execute_scenario(scenario_id: str, db: Session = Depends(get_db)):
+    """Execute a controlled field simulation scenario."""
+    service = FieldSimulationService(db)
+    return service.execute_scenario(scenario_id)
 
 
 @router.post("/reset")
@@ -23,58 +40,19 @@ def reset_demo(scenario: str = "defect", db: Session = Depends(get_db)):
     
     scenario: 'defect' (default, sets up VRT-003 0.50m overlap for golden path) or 'clean'.
     """
-    # 1. Clean previous state
-    db.execute(text("DELETE FROM evaluation_runs;"))
-    db.execute(text("DELETE FROM reproducibility_snapshots;"))
-    db.execute(text("DELETE FROM validation_disagreements;"))
-    db.execute(text("DELETE FROM ai_anomalies;"))
-    db.execute(text("DELETE FROM ai_candidates;"))
-    db.execute(text("DELETE FROM ai_observations;"))
-    db.execute(text("DELETE FROM export_records;"))
-    db.execute(text("DELETE FROM audit_events;"))
-    db.execute(text("DELETE FROM approval_decisions;"))
-    db.execute(text("DELETE FROM review_decisions;"))
-    db.execute(text("DELETE FROM validation_issues;"))
-    db.execute(text("DELETE FROM validation_runs;"))
-    db.execute(text("DELETE FROM provenance_records;"))
-    db.execute(text("DELETE FROM spatial_unit_revisions;"))
-    db.execute(text("DELETE FROM spatial_units;"))
-    db.execute(text("DELETE FROM evidence_sources;"))
-    db.execute(text("DELETE FROM parent_parcels;"))
-    db.commit()
+    service = FieldSimulationService(db)
+    scenario_id = "clean" if scenario == "clean" else "defect"
+    report = service.execute_scenario(scenario_id)
 
-    fixture_name = "synthetic_parcel_defect.json" if scenario == "defect" else "synthetic_parcel_clean.json"
-    fixture_path = Path("fixtures") / fixture_name
-    with open(fixture_path, "r", encoding="utf-8") as f:
-        fixture_data = json.load(f)
-
-    # 2. Ingest Parcel
-    p_service = ParcelService(db)
-    parcel = p_service.ingest_parcel(ParcelIngestRequest(**fixture_data["parent_parcel"]))
-
-    # 3. Register Evidence
-    e_service = EvidenceService(db)
-    evidence_registered = []
-    for ev in fixture_data["evidence"]:
-        saved_ev = e_service.register_evidence(EvidenceRegisterRequest(parent_ulpin=parcel.ulpin, **ev))
-        evidence_registered.append(saved_ev.id)
-
-    # 4. Generate 3D Units
-    g_service = GenerationService(db)
-    units = g_service.generate_3d_units(parcel.ulpin, UnitGenerateRequest(**fixture_data["building"]))
-
-    # 5. Run Validation
+    # Fetch validation summary for backward compatibility
     v_service = ValidationService(db)
-    val_summary = v_service.run_validation(parcel.ulpin)
+    val_summary = v_service.run_validation(report["parent_ulpin"])
 
     return {
         "status": "RESET_SUCCESSFUL",
         "scenario": scenario,
-        "parent_ulpin": parcel.ulpin,
-        "parcel_area_sqm": parcel.area_sqm,
-        "storage_srid": parcel.storage_srid,
-        "units_count": len(units),
-        "evidence_count": len(evidence_registered),
+        "parent_ulpin": report["parent_ulpin"],
+        "units_count": report["units_count"],
         "validation": {
             "run_id": val_summary.run_id,
             "rules_evaluated": val_summary.rules_evaluated,
@@ -84,3 +62,4 @@ def reset_demo(scenario: str = "defect", db: Session = Depends(get_db)):
             "can_approve": val_summary.can_approve
         }
     }
+

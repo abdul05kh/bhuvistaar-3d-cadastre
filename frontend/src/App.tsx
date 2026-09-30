@@ -44,6 +44,12 @@ import { ValidationExplanationModal } from './components/ai/ValidationExplanatio
 import { ModelComparisonModal } from './components/ai/ModelComparisonModal';
 import { SideBySideEvidenceViewer } from './components/ai/SideBySideEvidenceViewer';
 
+// Slice 5 Operational & Deployment Components
+import { SystemReadinessModal } from './components/system/SystemReadinessModal';
+import { InteroperabilityExportModal } from './components/export/InteroperabilityExportModal';
+import { FieldOperatorView } from './components/field/FieldOperatorView';
+import { OperationalRole } from './types';
+
 import {
   AlertTriangle,
   FileText,
@@ -57,8 +63,11 @@ import {
   Sparkles,
   ArrowRightLeft,
   Columns,
-  Hash
+  Hash,
+  Smartphone,
+  Server
 } from 'lucide-react';
+
 
 const DEFAULT_ULPIN = '12345678901234';
 
@@ -73,7 +82,8 @@ type BottomTab =
   | 'review'
   | 'revisions'
   | 'audit'
-  | 'export';
+  | 'export'
+  | 'field-operator';
 
 export const App: React.FC = () => {
   const [parcel, setParcel] = useState<ParentParcel | null>(null);
@@ -89,6 +99,12 @@ export const App: React.FC = () => {
   const [exportData, setExportData] = useState<StructuredExport | null>(null);
   const [reviewDecisionType, setReviewDecisionType] = useState<string | null>(null);
 
+  // Slice 5 State
+  const [activeRole, setActiveRole] = useState<OperationalRole>('ADMIN');
+  const [isSystemReadinessOpen, setIsSystemReadinessOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
   // Slice 3 AI State
   const [aiCandidates, setAiCandidates] = useState<AICandidate[]>([]);
   const [aiAnomalies, setAiAnomalies] = useState<AIAnomaly[]>([]);
@@ -103,6 +119,7 @@ export const App: React.FC = () => {
   const [isValidationExplainModalOpen, setIsValidationExplainModalOpen] = useState(false);
   const [explainRunId, setExplainRunId] = useState<string>('');
   const [isModelComparisonModalOpen, setIsModelComparisonModalOpen] = useState(false);
+
 
   // Modals & Dialogs
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
@@ -185,7 +202,16 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     loadWorkspaceData();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
+
 
   // Update Revisions and Export when selected unit changes
   useEffect(() => {
@@ -379,20 +405,27 @@ export const App: React.FC = () => {
   const handleSelectScenario = async (scenarioKey: string) => {
     setIsLoading(true);
     try {
-      await api.loadAiDemoScenario(scenarioKey);
+      await api.executeScenario(scenarioKey);
       await loadWorkspaceData(DEFAULT_ULPIN);
-      if (scenarioKey === 'evidence-conflict' || scenarioKey === 'vertical-gap') {
-        setActiveTab('anomalies');
+      if (scenarioKey === 'conflicting_evidence') {
+        setActiveTab('evidence');
+      } else if (scenarioKey === 'ai_unavailable') {
+        setActiveTab('validation');
+      } else if (scenarioKey === 'stale_evidence' || scenarioKey === 'stale_validation') {
+        setActiveTab('review');
+      } else if (scenarioKey === 'review_rejection') {
+        setActiveTab('review');
       } else {
         setActiveTab('ai-candidates');
       }
-      showToast(`Loaded Scenario: ${scenarioKey.toUpperCase()}`, 'success');
+      showToast(`Field Simulation Loaded: ${scenarioKey.toUpperCase().replace('_', ' ')}`, 'success');
     } catch (err: any) {
       showToast(`Scenario load error: ${err.message}`, 'error');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   // Judge Demo Guide Stepper
   const handleNextDemoStep = async () => {
@@ -463,6 +496,8 @@ export const App: React.FC = () => {
         candidateCount={aiCandidates.length}
         anomalyCount={aiAnomalies.length}
         disagreementCount={disagreements.length}
+        activeRole={activeRole}
+        onChangeRole={setActiveRole}
         onResetDemo={handleResetDemo}
         onToggleDemoGuide={() => setIsDemoGuideOpen(!isDemoGuideOpen)}
         onOpenTraceOrigin={() => {
@@ -471,9 +506,36 @@ export const App: React.FC = () => {
         }}
         onOpenModelCards={() => setIsModelModalOpen(true)}
         onOpenCompareModels={() => setIsModelComparisonModalOpen(true)}
+        onOpenSystemReadiness={() => setIsSystemReadinessOpen(true)}
+        onOpenExportModal={() => {
+          if (!exportData && selectedUnit?.active_revision_id) {
+            api.getExportForRevision(selectedUnit.active_revision_id).then(exp => {
+              setExportData(exp);
+              setIsExportModalOpen(true);
+            }).catch(() => setIsExportModalOpen(true));
+          } else {
+            setIsExportModalOpen(true);
+          }
+        }}
         isDemoGuideOpen={isDemoGuideOpen}
         isLoading={isLoading}
       />
+
+      {/* Offline Alert Banner */}
+      {!isOnline && (
+        <div style={{
+          backgroundColor: '#991b1b',
+          color: '#fecaca',
+          padding: '6px 16px',
+          fontSize: '11px',
+          fontWeight: 700,
+          textAlign: 'center',
+          borderBottom: '1px solid #dc2626'
+        }}>
+          CONNECTION LOST — DISPLAYING LAST VERIFIED LOCAL STATE. NO FABRICATED UPDATES.
+        </div>
+      )}
+
 
       {/* Module K: Demo Scenario Bar */}
       {isDemoGuideOpen && (
@@ -646,7 +708,17 @@ export const App: React.FC = () => {
                 <Download size={12} />
                 Export
               </button>
+
+              <button
+                className={`btn btn-sm ${activeTab === 'field-operator' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('field-operator')}
+              >
+                <Smartphone size={12} className="text-emerald-400" />
+                Field View
+              </button>
             </div>
+
 
             {/* Tab Body */}
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px' }}>
@@ -787,7 +859,20 @@ export const App: React.FC = () => {
                   isLoading={isLoading}
                 />
               )}
+
+              {activeTab === 'field-operator' && (
+                <FieldOperatorView
+                  ulpin={parcel?.ulpin || DEFAULT_ULPIN}
+                  units={units}
+                  evidence={evidenceList}
+                  issues={validationSummary?.issues || []}
+                  isOnline={isOnline}
+                  onSelectUnit={(u) => setSelectedUnitId(u.id)}
+                  onRequestCorrection={() => setIsCorrectionModalOpen(true)}
+                />
+              )}
             </div>
+
           </div>
         </div>
 
@@ -885,8 +970,24 @@ export const App: React.FC = () => {
           onClose={() => setIsModelComparisonModalOpen(false)}
         />
       )}
+
+      {/* Slice 5: System Readiness & Integrity Modal */}
+      <SystemReadinessModal
+        isOpen={isSystemReadinessOpen}
+        onClose={() => setIsSystemReadinessOpen(false)}
+      />
+
+      {/* Slice 5: Interoperability Export Modal */}
+      <InteroperabilityExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        exportData={exportData}
+        ulpin={parcel?.ulpin || DEFAULT_ULPIN}
+        revisionId={selectedUnit?.active_revision_id || ''}
+      />
     </div>
   );
 };
+
 
 export default App;

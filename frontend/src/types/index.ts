@@ -476,4 +476,113 @@ export interface ValidationExplanationResponse {
   explanations: ValidationExplanationItem[];
 }
 
+// Slice 5 Types
+export type OperationalRole = 'VIEWER' | 'REVIEWER' | 'APPROVER' | 'ADMIN';
+
+export interface SystemCategoryStatus {
+  status: string;
+  notes?: string;
+  engine?: string;
+  version?: string;
+  environment?: string;
+  migration_head?: string;
+  ruleset_version?: string;
+  validator_version?: string;
+  mode?: string;
+  parcels?: number;
+  units?: number;
+  canonical_srid?: number;
+  canonical_crs?: string;
+}
+
+export interface SystemReadinessResponse {
+  categories: {
+    deployment: SystemCategoryStatus;
+    database: SystemCategoryStatus;
+    postgis: SystemCategoryStatus;
+    schema: SystemCategoryStatus;
+    ai_intelligence: SystemCategoryStatus;
+    validation_engine: SystemCategoryStatus;
+    governance_engine: SystemCategoryStatus;
+    interoperability: SystemCategoryStatus;
+    demo_data: SystemCategoryStatus;
+  };
+  role_context: {
+    active_role: OperationalRole;
+    available_roles: OperationalRole[];
+    authorization_mode: string;
+    disclaimer: string;
+  };
+}
+
+export interface IntegrityIssue {
+  severity: 'BLOCKER' | 'WARN';
+  check: string;
+  entity_id: string;
+  description: string;
+}
+
+export interface IntegrityReport {
+  status: 'PASS' | 'WARNING' | 'BLOCKER';
+  summary: {
+    status: string;
+    total_issues: number;
+    blockers: number;
+    warnings: number;
+    checks_performed: string[];
+  };
+  issues: IntegrityIssue[];
+}
+
+export interface ScenarioItem {
+  id: string;
+  name: string;
+  condition: string;
+  description: string;
+  expected_validation: string;
+  expected_blockers: number;
+}
+
+export interface EvidenceConflictItem {
+  source_a_id: string;
+  source_b_id: string;
+  parameter: string;
+  source_a_value: any;
+  source_b_value: any;
+  discrepancy: string;
+  level_code?: string | null;
+  resolution_status: string;
+}
+
+export interface RoundTripVerificationResult {
+  status: string;
+  verified: boolean;
+  claimed_vuid?: string;
+  recalculated_vuid?: string;
+  discrepancies: string[];
+  disclaimer: string;
+}
+
+export interface ObservabilityMetrics {
+  metrics: {
+    parent_parcels: number;
+    spatial_units: number;
+    spatial_unit_revisions: number;
+    evidence_sources: number;
+    validation_runs: number;
+    validation_issues: number;
+    review_decisions: number;
+    approval_decisions: number;
+    audit_events: number;
+    exports_generated: number;
+    ai_disagreements: number;
+  };
+  system: {
+    environment: string;
+    ai_mode: string;
+    authorization_mode: string;
+  };
+}
+
+
 

@@ -28,4 +28,31 @@ class EvidenceResponse(BaseModel):
     acquisition_time: Optional[datetime]
     processing_version: str
     metadata: dict[str, Any]
+    quality_status: str = "ACCEPTED"
+    quality_notes: list[str] = Field(default_factory=list)
+    is_duplicate: bool = False
+    duplicate_of_id: Optional[str] = None
+    is_stale: bool = False
     created_at: datetime
+
+
+class EvidenceConflict(BaseModel):
+    source_a_id: str
+    source_b_id: str
+    parameter: str
+    source_a_value: Any
+    source_b_value: Any
+    discrepancy: str
+    level_code: Optional[str] = None
+    resolution_status: str = "PENDING_HUMAN_RESOLUTION"
+
+
+class EvidenceQualityReport(BaseModel):
+    evidence_id: str
+    parent_ulpin: str
+    status: str  # ACCEPTED, WARNING, BLOCKED
+    checks_evaluated: int
+    passed_checks: list[str]
+    warnings: list[str]
+    blockers: list[str]
+

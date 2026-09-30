@@ -323,6 +323,69 @@ export const api = {
     const res = await fetch(`${API_BASE}/ai/evaluations/history`);
     return handleResponse<any>(res);
   },
+
+  // ==============================================================================
+  // SLICE 5 — OPERATIONAL DEPLOYMENT, INTEROPERABILITY & FIELD SIMULATION METHODS
+  // ==============================================================================
+
+  async getHealth(): Promise<any> {
+    const res = await fetch('/health');
+    return handleResponse<any>(res);
+  },
+
+  async getSystemReadiness(): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/readiness`);
+    return handleResponse<any>(res);
+  },
+
+  async getSystemIntegrity(): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/integrity`);
+    return handleResponse<any>(res);
+  },
+
+  async bootstrapSystem(): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/bootstrap`, {
+      method: 'POST',
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getObservabilityMetrics(): Promise<any> {
+    const res = await fetch(`${API_BASE}/system/observability`);
+    return handleResponse<any>(res);
+  },
+
+  async getScenarios(): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/demo/scenarios`);
+    return handleResponse<any[]>(res);
+  },
+
+  async executeScenario(scenarioId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/demo/scenarios/${scenarioId}/execute`, {
+      method: 'POST',
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getEvidenceConflicts(ulpin: string): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/evidence/conflicts/${ulpin}`);
+    return handleResponse<any[]>(res);
+  },
+
+  async exportGeoJson(ulpin: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/export/geojson/${ulpin}`);
+    return handleResponse<any>(res);
+  },
+
+  async verifyExportRoundtrip(payload: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/export/roundtrip/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<any>(res);
+  },
 };
+
 
 

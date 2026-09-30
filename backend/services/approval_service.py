@@ -49,7 +49,15 @@ class ApprovalService:
                 reasons.append(f"Unresolved BLOCKER validation issues exist ({latest_val.blocker_count} blockers).")
             # Validation must have run on or after revision creation
             if latest_val.created_at < revision.created_at:
-                reasons.append("Revision was created/corrected after the latest validation run. Revalidation is required.")
+                reasons.append("VALIDATION_OUTDATED: Revision was created/corrected after the latest validation run. Revalidation is required.")
+                self.audit_service.log_event(
+                    action=AuditAction.VALIDATION_MARKED_STALE,
+                    entity_type="SPATIAL_UNIT_REVISION",
+                    entity_id=str(revision_id),
+                    revision_id=revision_id,
+                    reason=f"Validation run '{latest_val.id}' predates revision '{revision_id}'. Validation is outdated.",
+                    metadata={"latest_val_id": str(latest_val.id), "revision_created_at": revision.created_at.isoformat()}
+                )
 
         # 3. Provenance and evidence integrity
         prov = self.prov_repo.find_by_revision_id(revision_id)
@@ -60,6 +68,25 @@ class ApprovalService:
                 reasons.append("No evidence records attached to this revision.")
             if not prov.is_verified:
                 reasons.append("Attached evidence integrity has not been verified.")
+            
+            # Check for stale evidence: compare provenance checksum against current evidence table
+            from backend.repository.evidence_repository import EvidenceRepository
+            ev_repo = EvidenceRepository(self.db)
+            current_sources = {e.id: e.checksum for e in ev_repo.find_by_parent_ulpin(revision.parent_ulpin)}
+            for ev in prov.evidence_sources:
+                ev_id = ev.get("id")
+                ev_checksum = ev.get("checksum")
+                if ev_id in current_sources and current_sources[ev_id] != ev_checksum:
+                    reasons.append(f"STALE_EVIDENCE: Evidence '{ev_id}' has been modified (checksum mismatch). Reprocessing required.")
+                    self.audit_service.log_event(
+                        action=AuditAction.EVIDENCE_MARKED_STALE,
+                        entity_type="SPATIAL_UNIT_REVISION",
+                        entity_id=str(revision_id),
+                        revision_id=revision_id,
+                        reason=f"Evidence source '{ev_id}' checksum changed from '{ev_checksum[:8]}' to '{current_sources[ev_id][:8]}'.",
+                        metadata={"evidence_id": ev_id, "prev_checksum": ev_checksum, "new_checksum": current_sources[ev_id]}
+                    )
+
 
         # 4. Human review decision check
         latest_review = self.review_repo.find_latest_for_revision(revision_id)

@@ -27,6 +27,20 @@ def register_evidence(request: EvidenceRegisterRequest, db: Session = Depends(ge
     )
 
 
+@router.get("/conflicts/{ulpin}", response_model=list[dict])
+def get_evidence_conflicts(ulpin: str, db: Session = Depends(get_db)):
+    service = EvidenceService(db)
+    conflicts = service.detect_evidence_conflicts(ulpin)
+    return [c.model_dump() for c in conflicts]
+
+
+@router.post("/quality/check")
+def check_evidence_quality(request: EvidenceRegisterRequest, db: Session = Depends(get_db)):
+    service = EvidenceService(db)
+    report = service.evaluate_quality(request)
+    return report.model_dump()
+
+
 @router.get("/{evidence_id}", response_model=EvidenceResponse)
 def get_evidence(evidence_id: str, db: Session = Depends(get_db)):
     service = EvidenceService(db)
@@ -44,3 +58,5 @@ def get_evidence(evidence_id: str, db: Session = Depends(get_db)):
         metadata=evidence.metadata,
         created_at=evidence.created_at
     )
+
+

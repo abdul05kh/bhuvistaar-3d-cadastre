@@ -11,6 +11,7 @@ from backend.api.v1.endpoints_audit import router as audit_router
 from backend.api.v1.endpoints_export import router as export_router
 from backend.api.v1.endpoints_demo import router as demo_router
 from backend.api.v1.endpoints_ai import router as ai_router
+from backend.api.v1.endpoints_system import router as system_router
 
 
 api_router = APIRouter()
@@ -26,4 +27,6 @@ api_router.include_router(audit_router)
 api_router.include_router(export_router)
 api_router.include_router(demo_router)
 api_router.include_router(ai_router)
+api_router.include_router(system_router)
+
 

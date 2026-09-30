@@ -60,6 +60,15 @@ class RevisionRepository:
         )
         return [self._to_domain(m) for m in models]
 
+    def find_by_parent_ulpin(self, ulpin: str) -> list[SpatialUnitRevision]:
+        models = (
+            self.db.query(SpatialUnitRevisionModel)
+            .filter_by(parent_ulpin=ulpin)
+            .order_by(SpatialUnitRevisionModel.created_at.asc())
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
     def find_latest_for_unit(self, unit_id: UUID) -> Optional[SpatialUnitRevision]:
         model = (
             self.db.query(SpatialUnitRevisionModel)
