@@ -1,0 +1,97 @@
+{
+  "parent_parcel": {
+    "ulpin": "12345678901234",
+    "crs": "EPSG:32643",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [200000.0, 1900000.0],
+          [200040.0, 1900000.0],
+          [200040.0, 1900030.0],
+          [200000.0, 1900030.0],
+          [200000.0, 1900000.0]
+        ]
+      ]
+    },
+    "metadata": {
+      "classification": "SYNTHETIC_DEMOSTRATION_FIXTURE",
+      "notes": "Synthetic 40m x 30m parcel for SIH26011 validation testing."
+    }
+  },
+  "building": {
+    "id": "BLDG-001",
+    "footprint": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [200008.0, 1900006.0],
+          [200032.0, 1900006.0],
+          [200032.0, 1900024.0],
+          [200008.0, 1900024.0],
+          [200008.0, 1900006.0]
+        ]
+      ]
+    },
+    "floors": [
+      {
+        "level": "B1",
+        "z_min": 97.0,
+        "z_max": 100.0,
+        "semantic_type": "BASEMENT_VOLUME"
+      },
+      {
+        "level": "G",
+        "z_min": 100.0,
+        "z_max": 103.0,
+        "semantic_type": "FLOOR_VOLUME"
+      },
+      {
+        "level": "L01",
+        "z_min": 103.0,
+        "z_max": 106.0,
+        "semantic_type": "FLOOR_VOLUME"
+      },
+      {
+        "level": "L02",
+        "z_min": 106.0,
+        "z_max": 109.0,
+        "semantic_type": "FLOOR_VOLUME"
+      }
+    ],
+    "evidence_ids": [
+      "EVID-001",
+      "EVID-002",
+      "EVID-003"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "EVID-001",
+      "evidence_type": "PARCEL_BOUNDARY",
+      "provider": "Synthetic Cadastral Survey Division",
+      "source_reference": "REF-CADASTRE-2026-001",
+      "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "crs": "EPSG:32643",
+      "processing_version": "1.0.0"
+    },
+    {
+      "id": "EVID-002",
+      "evidence_type": "BUILDING_FOOTPRINT",
+      "provider": "Synthetic Drone Orthophoto Extraction",
+      "source_reference": "REF-DRONE-ORTHO-2026-042",
+      "checksum": "7d793037a0760186574b0282f2f435e7b1e51a44e532b271d4715f532a325026",
+      "crs": "EPSG:32643",
+      "processing_version": "1.0.0"
+    },
+    {
+      "id": "EVID-003",
+      "evidence_type": "FLOOR_PLAN",
+      "provider": "Synthetic Architectural Blueprints",
+      "source_reference": "REF-ARCH-PLANS-TOWER-A",
+      "checksum": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
+      "crs": "EPSG:32643",
+      "processing_version": "1.0.0"
+    }
+  ]
+}
