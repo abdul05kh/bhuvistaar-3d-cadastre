@@ -9,6 +9,7 @@ from backend.api.v1.endpoints_correction import router as correction_router
 from backend.api.v1.endpoints_approval import router as approval_router
 from backend.api.v1.endpoints_audit import router as audit_router
 from backend.api.v1.endpoints_export import router as export_router
+from backend.api.v1.endpoints_demo import router as demo_router
 
 
 api_router = APIRouter()
@@ -22,4 +23,5 @@ api_router.include_router(correction_router)
 api_router.include_router(approval_router)
 api_router.include_router(audit_router)
 api_router.include_router(export_router)
+api_router.include_router(demo_router)
 

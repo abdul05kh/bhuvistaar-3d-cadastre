@@ -39,3 +39,6 @@ class EvidenceService:
             from backend.exceptions import EvidenceNotFoundError
             raise EvidenceNotFoundError(evidence_id)
         return evidence
+
+    def list_evidence_for_parcel(self, ulpin: str) -> list[EvidenceSource]:
+        return self.evidence_repo.find_by_parent_ulpin(ulpin)
