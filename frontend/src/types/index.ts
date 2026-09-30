@@ -247,3 +247,139 @@ export interface StructuredExport {
     }>;
   };
 }
+
+// ==============================================================================
+// SLICE 3 — AI INTELLIGENCE TYPES
+// ==============================================================================
+
+export type CandidateStatus = 'AI_CANDIDATE' | 'ACCEPTED' | 'REJECTED' | 'CORRECTED';
+
+export interface AICandidate {
+  candidate_id: string;
+  parent_ulpin: string;
+  level_code: string;
+  semantic_type: string;
+  z_min: number;
+  z_max: number;
+  confidence: number;
+  confidence_band: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: CandidateStatus;
+  source_evidence_ids: string[];
+  reason_codes: string[];
+  footprint_geojson: GeoJSONPolygon;
+  footprint_area_sqm: number;
+  volume_cbm: number;
+  centroid: [number, number, number];
+  model: {
+    name: string;
+    version: string;
+  };
+  governed_unit_id?: string | null;
+  governed_revision_id?: string | null;
+  rejection_reason?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface AIAnomaly {
+  anomaly_id: string;
+  parent_ulpin: string;
+  anomaly_type: string;
+  severity: Severity;
+  affected_units: string[];
+  evidence_ids: string[];
+  confidence: number;
+  reason_codes: string[];
+  recommended_action: string;
+  model: {
+    name: string;
+    version: string;
+  };
+  resolved: boolean;
+  created_at?: string | null;
+}
+
+export interface AIAssistanceSummary {
+  parent_ulpin: string;
+  total_candidates: number;
+  high_confidence_count: number;
+  medium_confidence_count: number;
+  low_confidence_count: number;
+  anomalies_count: number;
+  blocker_count: number;
+  evidence_conflicts_count: number;
+  review_required_count: number;
+  model_name: string;
+  model_version: string;
+  inference_timestamp: string;
+  operational_disclaimer: string;
+}
+
+export interface ReviewerQueueItem {
+  priority: number;
+  item_type: 'BLOCKER' | 'ANOMALY' | 'CANDIDATE_REVIEW';
+  identifier: string;
+  title: string;
+  severity: Severity;
+  confidence?: number | null;
+  reason: string;
+  recommended_action: string;
+  affected_level?: string | null;
+}
+
+export interface ReviewerQueueResponse {
+  parent_ulpin: string;
+  total_items: number;
+  items: ReviewerQueueItem[];
+}
+
+export interface FactBasedExplanation {
+  target_id: string;
+  target_type: string;
+  summary: string;
+  evidence_basis: string[];
+  geometric_facts: string[];
+  validation_status: string;
+  governance_status: string;
+  disclaimer: string;
+}
+
+export interface TraceOriginNode {
+  step: number;
+  stage: string;
+  title: string;
+  identifier: string;
+  status: string;
+  timestamp?: string | null;
+  actor: string;
+  details: Record<string, any>;
+}
+
+export interface TraceOriginResponse {
+  target_identifier: string;
+  parent_ulpin: string;
+  lineage_path: TraceOriginNode[];
+  is_authoritative: boolean;
+  provenance_hash?: string | null;
+}
+
+export interface ModelCard {
+  model_id: string;
+  name: string;
+  version: string;
+  task: string;
+  status: string;
+  description: string;
+  architecture: string;
+  inputs: string[];
+  outputs: string[];
+  training_data_disclosure: string;
+  known_limitations: string[];
+  metrics: Record<string, any>;
+  intended_use: string;
+  prohibited_use: string;
+  license: string;
+  disclaimer: string;
+}
+

@@ -6,8 +6,11 @@ import { ParentParcel, SpatialUnit } from '../../types';
 interface Cadastral3DViewerProps {
   parcel: ParentParcel | null;
   units: SpatialUnit[];
+  aiCandidates?: any[];
   selectedUnitId: string | null;
+  selectedCandidateId?: string | null;
   onSelectUnit: (unitId: string) => void;
+  onSelectCandidate?: (candidateId: string) => void;
   hasOverlapDefect: boolean;
   overlapElevationRange?: { min: number; max: number };
 }
@@ -15,8 +18,11 @@ interface Cadastral3DViewerProps {
 export const Cadastral3DViewer: React.FC<Cadastral3DViewerProps> = ({
   parcel,
   units,
+  aiCandidates = [],
   selectedUnitId,
+  selectedCandidateId = null,
   onSelectUnit,
+  onSelectCandidate,
   hasOverlapDefect,
   overlapElevationRange = { min: 106.0, max: 106.5 },
 }) => {
@@ -138,9 +144,13 @@ export const Cadastral3DViewer: React.FC<Cadastral3DViewerProps> = ({
 
       if (intersects.length > 0) {
         const clickedMesh = intersects[0].object as THREE.Mesh;
-        for (const [unitId, mesh] of meshMapRef.current.entries()) {
-          if (mesh === clickedMesh) {
-            onSelectUnit(unitId);
+        for (const [id, mesh] of meshMapRef.current.entries()) {
+          if (mesh === clickedMesh || mesh.children.includes(clickedMesh)) {
+            if (id.startsWith('cand_')) {
+              onSelectCandidate?.(id.replace('cand_', ''));
+            } else {
+              onSelectUnit(id);
+            }
             break;
           }
         }
@@ -194,7 +204,7 @@ export const Cadastral3DViewer: React.FC<Cadastral3DViewerProps> = ({
     // Clear previous geometry meshes (keep lights & grid)
     const objectsToRemove: THREE.Object3D[] = [];
     scene.traverse((obj) => {
-      if (obj.name && (obj.name.startsWith('unit_') || obj.name.startsWith('parcel_') || obj.name === 'overlap_box')) {
+      if (obj.name && (obj.name.startsWith('unit_') || obj.name.startsWith('parcel_') || obj.name.startsWith('ai_candidate_') || obj.name === 'overlap_box')) {
         objectsToRemove.push(obj);
       }
     });
@@ -339,7 +349,70 @@ export const Cadastral3DViewer: React.FC<Cadastral3DViewerProps> = ({
         scene.add(overlapMesh);
       }
     }
-  }, [parcel, units, selectedUnitId, isExploded, showWireframe, showOverlapMesh, isolatedUnitId, hasOverlapDefect]);
+
+    // 4. Render AI Candidate Proposals (Translucent Cyan/Amber Prisms with Dashed Outlines)
+    if (aiCandidates && aiCandidates.length > 0) {
+      aiCandidates.forEach((cand, idx) => {
+        if (!cand.footprint_geojson || !cand.footprint_geojson.coordinates) return;
+        const footprintCoords = cand.footprint_geojson.coordinates[0];
+        const candShape = new THREE.Shape();
+        footprintCoords.forEach((pt: number[], i: number) => {
+          const localX = pt[0] - originX;
+          const localZ = pt[1] - originY;
+          if (i === 0) candShape.moveTo(localX, localZ);
+          else candShape.lineTo(localX, localZ);
+        });
+
+        const floorHeight = Math.max(0.1, cand.z_max - cand.z_min);
+        const extrudeSettings = {
+          depth: floorHeight,
+          bevelEnabled: false,
+        };
+
+        const geom = new THREE.ExtrudeGeometry(candShape, extrudeSettings);
+        geom.rotateX(Math.PI / 2);
+
+        const isSelected = cand.candidate_id === selectedCandidateId;
+        const isAccepted = cand.status === 'ACCEPTED';
+        const isRejected = cand.status === 'REJECTED';
+
+        let candColor = 0x06b6d4; // cyan proposal
+        if (cand.confidence_band === 'LOW') candColor = 0xf43f5e; // red/low confidence
+        if (isSelected) candColor = 0x38bdf8; // bright highlight
+        if (isAccepted) candColor = 0x10b981; // emerald
+        if (isRejected) candColor = 0x64748b; // slate
+
+        const mat = new THREE.MeshStandardMaterial({
+          color: candColor,
+          roughness: 0.25,
+          metalness: 0.1,
+          transparent: true,
+          opacity: isSelected ? 0.65 : 0.40,
+          wireframe: showWireframe,
+        });
+
+        const mesh = new THREE.Mesh(geom, mat);
+        let yPos = cand.z_min - baseElevation;
+        if (isExploded) {
+          yPos += (idx + units.length) * 3.5;
+        }
+        mesh.position.set(0, yPos, 0);
+
+        // Dashed wireframe edges for AI candidate
+        const edges = new THREE.EdgesGeometry(geom);
+        const wire = new THREE.LineSegments(
+          edges,
+          new THREE.LineDashedMaterial({ color: isSelected ? 0x67e8f9 : 0x22d3ee, dashSize: 1, gapSize: 0.5 })
+        );
+        wire.computeLineDistances();
+        mesh.add(wire);
+
+        mesh.name = `ai_candidate_${cand.candidate_id}`;
+        scene.add(mesh);
+        meshMapRef.current.set(`cand_${cand.candidate_id}`, mesh);
+      });
+    }
+  }, [parcel, units, aiCandidates, selectedUnitId, selectedCandidateId, isExploded, showWireframe, showOverlapMesh, isolatedUnitId, hasOverlapDefect]);
 
   // Camera presets
   const handleResetCamera = () => {

@@ -194,4 +194,92 @@ export const api = {
     });
     return handleResponse<any>(res);
   },
+
+  // ==============================================================================
+  // SLICE 3 — AI INTELLIGENCE API METHODS
+  // ==============================================================================
+
+  async runAiInference(ulpin: string, actorId: string = 'surveyor_officer_01'): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/infer/${ulpin}?actor_id=${actorId}`, {
+      method: 'POST',
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getAiCandidates(ulpin: string, status?: string, band?: string): Promise<{ parent_ulpin: string; count: number; candidates: any[] }> {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (band) params.append('confidence_band', band);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE}/ai/candidates/${ulpin}${queryStr}`);
+    return handleResponse<any>(res);
+  },
+
+  async getCandidateDetail(candidateId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/candidates/detail/${candidateId}`);
+    return handleResponse<any>(res);
+  },
+
+  async acceptCandidate(candidateId: string, reviewerId: string, justification: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/candidates/${candidateId}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewer_id: reviewerId, justification }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async rejectCandidate(candidateId: string, reviewerId: string, justification: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/candidates/${candidateId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewer_id: reviewerId, justification }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getAiAnomalies(ulpin: string): Promise<{ parent_ulpin: string; count: number; anomalies: any[] }> {
+    const res = await fetch(`${API_BASE}/ai/anomalies/${ulpin}`);
+    return handleResponse<any>(res);
+  },
+
+  async getAiSummary(ulpin: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/summary/${ulpin}`);
+    return handleResponse<any>(res);
+  },
+
+  async getReviewerQueue(ulpin: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/queue/${ulpin}`);
+    return handleResponse<any>(res);
+  },
+
+  async getFactExplanation(candidateId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/explain/${candidateId}`);
+    return handleResponse<any>(res);
+  },
+
+  async traceOrigin(identifier: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/trace-origin/${identifier}`);
+    return handleResponse<any>(res);
+  },
+
+  async getAiModels(): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/models`);
+    return handleResponse<any>(res);
+  },
+
+  async runAiEvaluation(): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/evaluate`, {
+      method: 'POST',
+    });
+    return handleResponse<any>(res);
+  },
+
+  async loadAiDemoScenario(scenarioKey: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/scenarios/${scenarioKey}`, {
+      method: 'POST',
+    });
+    return handleResponse<any>(res);
+  },
 };
+

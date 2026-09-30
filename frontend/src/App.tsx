@@ -7,6 +7,10 @@ import {
   SpatialUnitRevision,
   AuditEvent,
   StructuredExport,
+  AICandidate,
+  AIAnomaly,
+  AIAssistanceSummary,
+  ReviewerQueueItem
 } from './types';
 import { api } from './api/client';
 import { AppHeader } from './components/layout/AppHeader';
@@ -21,11 +25,42 @@ import { RevisionComparison } from './components/revision/RevisionComparison';
 import { AuditTimeline } from './components/audit/AuditTimeline';
 import { ExportCenter } from './components/export/ExportCenter';
 import { CorrectionModal } from './components/correction/CorrectionModal';
-import { CheckCircle2, AlertTriangle, Shield, Layers, FileText, CheckSquare, GitCompare, History, Download } from 'lucide-react';
+
+// Slice 3 AI Components
+import { AISuggestionsPanel } from './components/ai/AISuggestionsPanel';
+import { AnomalyCenter } from './components/ai/AnomalyCenter';
+import { ReviewerQueuePanel } from './components/ai/ReviewerQueuePanel';
+import { TraceOriginModal } from './components/ai/TraceOriginModal';
+import { ModelEvaluationModal } from './components/ai/ModelEvaluationModal';
+import { AcceptCandidateModal } from './components/ai/AcceptCandidateModal';
+import { RejectCandidateModal } from './components/ai/RejectCandidateModal';
+import { ExplainModal } from './components/ai/ExplainModal';
+
+import {
+  AlertTriangle,
+  FileText,
+  CheckSquare,
+  GitCompare,
+  History,
+  Download,
+  Brain,
+  ShieldAlert,
+  ListOrdered,
+  Sparkles
+} from 'lucide-react';
 
 const DEFAULT_ULPIN = '12345678901234';
 
-type BottomTab = 'validation' | 'evidence' | 'review' | 'revisions' | 'audit' | 'export';
+type BottomTab =
+  | 'validation'
+  | 'ai-candidates'
+  | 'anomalies'
+  | 'queue'
+  | 'evidence'
+  | 'review'
+  | 'revisions'
+  | 'audit'
+  | 'export';
 
 export const App: React.FC = () => {
   const [parcel, setParcel] = useState<ParentParcel | null>(null);
@@ -33,7 +68,7 @@ export const App: React.FC = () => {
   const [evidenceList, setEvidenceList] = useState<EvidenceSource[]>([]);
   const [validationSummary, setValidationSummary] = useState<ValidationSummary | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<BottomTab>('validation');
+  const [activeTab, setActiveTab] = useState<BottomTab>('ai-candidates');
 
   // Governance State
   const [revisions, setRevisions] = useState<SpatialUnitRevision[]>([]);
@@ -41,28 +76,57 @@ export const App: React.FC = () => {
   const [exportData, setExportData] = useState<StructuredExport | null>(null);
   const [reviewDecisionType, setReviewDecisionType] = useState<string | null>(null);
 
-  // Modals & UI Controls
+  // Slice 3 AI State
+  const [aiCandidates, setAiCandidates] = useState<AICandidate[]>([]);
+  const [aiAnomalies, setAiAnomalies] = useState<AIAnomaly[]>([]);
+  const [aiSummary, setAiSummary] = useState<AIAssistanceSummary | null>(null);
+  const [reviewerQueue, setReviewerQueue] = useState<ReviewerQueueItem[]>([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+
+  // Modals & Dialogs
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(true);
   const [demoStep, setDemoStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
+  // AI Modals
+  const [isTraceOriginOpen, setIsTraceOriginOpen] = useState(false);
+  const [traceTargetId, setTraceTargetId] = useState<string>(DEFAULT_ULPIN);
+  const [isModelModalOpen, setIsModelModalOpen] = useState(false);
+  const [candidateToAccept, setCandidateToAccept] = useState<AICandidate | null>(null);
+  const [candidateToReject, setCandidateToReject] = useState<AICandidate | null>(null);
+  const [candidateToExplain, setCandidateToExplain] = useState<string | null>(null);
+
   const showToast = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Initial Data Load
+  // Initial & Refresh Data Load
   const loadWorkspaceData = async (ulpin: string = DEFAULT_ULPIN) => {
     setIsLoading(true);
     try {
-      const [parcelData, unitsData, evidenceData, valData, recentAudits] = await Promise.all([
+      const [
+        parcelData,
+        unitsData,
+        evidenceData,
+        valData,
+        recentAudits,
+        candidatesData,
+        anomaliesData,
+        summaryData,
+        queueData
+      ] = await Promise.all([
         api.getParcel(ulpin),
         api.getParcelUnits(ulpin),
         api.getParcelEvidence(ulpin),
         api.getValidation(ulpin),
         api.getRecentAudits(40),
+        api.getAiCandidates(ulpin).catch(() => ({ candidates: [] })),
+        api.getAiAnomalies(ulpin).catch(() => ({ anomalies: [] })),
+        api.getAiSummary(ulpin).catch(() => null),
+        api.getReviewerQueue(ulpin).catch(() => ({ items: [] })),
       ]);
 
       setParcel(parcelData);
@@ -70,6 +134,15 @@ export const App: React.FC = () => {
       setEvidenceList(evidenceData);
       setValidationSummary(valData);
       setAuditEvents(recentAudits);
+
+      setAiCandidates(candidatesData.candidates || []);
+      setAiAnomalies(anomaliesData.anomalies || []);
+      setAiSummary(summaryData);
+      setReviewerQueue(queueData.items || []);
+
+      if (candidatesData.candidates && candidatesData.candidates.length > 0 && !selectedCandidateId) {
+        setSelectedCandidateId(candidatesData.candidates[0].candidate_id);
+      }
 
       // Default select L01 (the candidate with the defect)
       const l01 = unitsData.find((u) => u.level_code === 'L01');
@@ -111,14 +184,75 @@ export const App: React.FC = () => {
     setIsLoading(true);
     try {
       await api.resetDemo('defect');
+      // Also run AI inference on the reset parcel
+      await api.runAiInference(DEFAULT_ULPIN);
       await loadWorkspaceData(DEFAULT_ULPIN);
       setReviewDecisionType(null);
       setExportData(null);
-      setActiveTab('validation');
+      setActiveTab('ai-candidates');
       setDemoStep(1);
-      showToast('Demo reset successfully to initial defect state (VRT-003 blocker active).', 'success');
+      showToast('Demo reset successfully: AI proposals synthesized with VRT-003 overlap blocker.', 'success');
     } catch (err: any) {
       showToast(`Reset Failed: ${err.message}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // AI Pipeline Execution Handler
+  const handleRunInference = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.runAiInference(DEFAULT_ULPIN);
+      setAiCandidates(res.candidates || []);
+      setAiAnomalies(res.anomalies || []);
+      setAiSummary(res.summary);
+      const queue = await api.getReviewerQueue(DEFAULT_ULPIN);
+      setReviewerQueue(queue.items || []);
+      setActiveTab('ai-candidates');
+      showToast(`AI inference complete: Generated ${res.candidates?.length || 0} proposals and detected ${res.anomalies?.length || 0} anomalies.`, 'success');
+    } catch (err: any) {
+      showToast(`AI Inference Error: ${err.message}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // AI Candidate Accept Handler
+  const handleAcceptCandidateConfirm = async (
+    candidateId: string,
+    reviewerId: string,
+    justification: string
+  ) => {
+    setIsLoading(true);
+    try {
+      const res = await api.acceptCandidate(candidateId, reviewerId, justification);
+      showToast(`Proposal accepted! Promoted to governed unit with VUID ${res.prototype_vuid}`, 'success');
+      await loadWorkspaceData(DEFAULT_ULPIN);
+      setSelectedUnitId(res.spatial_unit_id);
+      setActiveTab('validation');
+    } catch (err: any) {
+      showToast(`Acceptance Failed: ${err.message}`, 'error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // AI Candidate Reject Handler
+  const handleRejectCandidateConfirm = async (
+    candidateId: string,
+    reviewerId: string,
+    justification: string
+  ) => {
+    setIsLoading(true);
+    try {
+      await api.rejectCandidate(candidateId, reviewerId, justification);
+      showToast('Proposal rejected and permanently recorded in audit history.', 'info');
+      await loadWorkspaceData(DEFAULT_ULPIN);
+    } catch (err: any) {
+      showToast(`Rejection Failed: ${err.message}`, 'error');
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -136,10 +270,8 @@ export const App: React.FC = () => {
       const res = await api.submitCorrection(revisionId, zMin, zMax, reason);
       showToast(`Correction applied! Created Revision ${res.status} with VUID ${res.prototype_vuid}`, 'success');
 
-      // Reload full state to reflect new revision and revalidation
       await loadWorkspaceData(DEFAULT_ULPIN);
 
-      // Select L01 and switch to revisions comparison tab
       const updatedL01 = units.find((u) => u.level_code === 'L01');
       if (updatedL01) {
         const revs = await api.getUnitRevisions(updatedL01.prototype_vuid);
@@ -159,7 +291,7 @@ export const App: React.FC = () => {
   const handleAcceptReview = async (revisionId: string, reason: string) => {
     setIsLoading(true);
     try {
-      const res = await api.submitReview(revisionId, 'ACCEPT', reason);
+      await api.submitReview(revisionId, 'ACCEPT', reason);
       setReviewDecisionType('ACCEPT');
       showToast('Review decision ACCEPT recorded. Gate C approval is now eligible.', 'success');
       await loadWorkspaceData(DEFAULT_ULPIN);
@@ -193,7 +325,6 @@ export const App: React.FC = () => {
       showToast(`Prototype Workflow Approved! Approved VUID: ${res.id}`, 'success');
       await loadWorkspaceData(DEFAULT_ULPIN);
 
-      // Fetch structured export
       const exp = await api.getExportForRevision(revisionId);
       setExportData(exp);
       setActiveTab('export');
@@ -220,32 +351,45 @@ export const App: React.FC = () => {
     }
   };
 
+  // Scenario Loader
+  const handleSelectScenario = async (scenarioKey: string) => {
+    setIsLoading(true);
+    try {
+      await api.loadAiDemoScenario(scenarioKey);
+      await loadWorkspaceData(DEFAULT_ULPIN);
+      if (scenarioKey === 'evidence-conflict' || scenarioKey === 'vertical-gap') {
+        setActiveTab('anomalies');
+      } else {
+        setActiveTab('ai-candidates');
+      }
+      showToast(`Loaded Scenario: ${scenarioKey.toUpperCase()}`, 'success');
+    } catch (err: any) {
+      showToast(`Scenario load error: ${err.message}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Judge Demo Guide Stepper
   const handleNextDemoStep = async () => {
     if (demoStep === 1) {
-      // Step 1 -> 2: Select L01 and switch to Validation tab
       const l01 = units.find((u) => u.level_code === 'L01');
       if (l01) setSelectedUnitId(l01.id);
       setActiveTab('validation');
       setDemoStep(2);
     } else if (demoStep === 2) {
-      // Step 2 -> 3: Attempt premature approval (shows Gate C refusal)
       setActiveTab('review');
       setDemoStep(3);
     } else if (demoStep === 3) {
-      // Step 3 -> 4: Open correction modal
       setIsCorrectionModalOpen(true);
       setDemoStep(4);
     } else if (demoStep === 4) {
-      // Step 4 -> 5: Open Revisions tab
       setActiveTab('revisions');
       setDemoStep(5);
     } else if (demoStep === 5) {
-      // Step 5 -> 6: Open Review tab
       setActiveTab('review');
       setDemoStep(6);
     } else if (demoStep === 6) {
-      // Step 6: Open Export tab
       if (selectedUnit?.active_revision_id) {
         const exp = await api.getExportForRevision(selectedUnit.active_revision_id);
         setExportData(exp);
@@ -255,100 +399,112 @@ export const App: React.FC = () => {
   };
 
   const handlePrevDemoStep = () => {
-    if (demoStep > 1) setDemoStep(demoStep - 1);
+    setDemoStep((prev) => Math.max(1, prev - 1));
   };
 
   return (
-    <div className="app-container">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div
           style={{
             position: 'fixed',
-            top: '68px',
-            right: '20px',
-            zIndex: 9999,
+            top: '64px',
+            right: '24px',
+            zIndex: 100,
             padding: '10px 16px',
             borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
             backgroundColor:
-              toastMessage.type === 'error'
-                ? 'var(--color-blocker)'
-                : toastMessage.type === 'success'
+              toastMessage.type === 'success'
                 ? 'var(--color-success)'
+                : toastMessage.type === 'error'
+                ? 'var(--color-blocker)'
                 : 'var(--color-primary)',
             color: '#ffffff',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
+            fontSize: '12px',
+            fontWeight: 500,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            maxWidth: '480px',
           }}
         >
           {toastMessage.text}
         </div>
       )}
 
-      {/* Top Header */}
+      {/* Module A: App Header */}
       <AppHeader
         ulpin={parcel?.ulpin || ''}
         status={selectedUnit?.status || 'GENERATED'}
         blockerCount={blockerCount}
+        candidateCount={aiCandidates.length}
+        anomalyCount={aiAnomalies.length}
         onResetDemo={handleResetDemo}
         onToggleDemoGuide={() => setIsDemoGuideOpen(!isDemoGuideOpen)}
+        onOpenTraceOrigin={() => {
+          setTraceTargetId(selectedCandidateId || selectedUnit?.prototype_vuid || DEFAULT_ULPIN);
+          setIsTraceOriginOpen(true);
+        }}
+        onOpenModelCards={() => setIsModelModalOpen(true)}
         isDemoGuideOpen={isDemoGuideOpen}
         isLoading={isLoading}
       />
 
-      {/* Judge Walkthrough Controller Banner */}
+      {/* Module K: Demo Scenario Bar */}
       {isDemoGuideOpen && (
         <DemoScenarioBar
           currentStep={demoStep}
           onNextStep={handleNextDemoStep}
           onPrevStep={handlePrevDemoStep}
           onResetDemo={handleResetDemo}
+          onSelectScenario={handleSelectScenario}
           isLoading={isLoading}
         />
       )}
 
-      {/* Main Workspace (3-column layout) */}
-      <div className="main-workspace">
-        {/* Left Column: Cadastral Hierarchy */}
+      {/* Main Workspace Layout (3-Column / Resizable) */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {/* Left Column: Parcel & Unit Tree Hierarchy */}
         <UnitTree
           parcel={parcel}
           units={units}
           selectedUnitId={selectedUnitId}
           onSelectUnit={(id) => {
             setSelectedUnitId(id);
+            const match = units.find((u) => u.id === id);
+            if (match) {
+              const candMatch = aiCandidates.find((c) => c.level_code === match.level_code);
+              if (candMatch) setSelectedCandidateId(candMatch.candidate_id);
+            }
           }}
           hasOverlapDefect={hasOverlapDefect}
         />
 
-        {/* Center Column: 3D Viewport + Bottom Tabs */}
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          {/* Top 62%: Three.js 3D Cadastral Engine */}
-          <div style={{ flex: '1 1 62%', minHeight: 0, position: 'relative' }}>
+        {/* Center Column: 3D Cadastral Viewer (Top) + Interactive Intelligence Panels (Bottom) */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: '1px solid var(--border-subtle)' }}>
+          {/* Module B: 3D Cadastral Viewer */}
+          <div style={{ height: '48%', position: 'relative', borderBottom: '1px solid var(--border-subtle)' }}>
             <Cadastral3DViewer
               parcel={parcel}
               units={units}
+              aiCandidates={aiCandidates}
               selectedUnitId={selectedUnitId}
-              onSelectUnit={setSelectedUnitId}
+              selectedCandidateId={selectedCandidateId}
+              onSelectUnit={(id) => setSelectedUnitId(id)}
+              onSelectCandidate={(candId) => {
+                setSelectedCandidateId(candId);
+                const matchCand = aiCandidates.find((c) => c.candidate_id === candId);
+                if (matchCand) {
+                  const matchUnit = units.find((u) => u.level_code === matchCand.level_code);
+                  if (matchUnit) setSelectedUnitId(matchUnit.id);
+                }
+              }}
               hasOverlapDefect={hasOverlapDefect}
               overlapElevationRange={{ min: 106.0, max: 106.5 }}
             />
           </div>
 
-          {/* Bottom 38%: Governance & Output Workspace */}
-          <div
-            style={{
-              flex: '0 0 38%',
-              backgroundColor: 'var(--bg-panel)',
-              borderTop: '1px solid var(--border-subtle)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
+          {/* Bottom Tabs Panel */}
+          <div style={{ height: '52%', display: 'flex', flexDirection: 'column', minHeight: 0, backgroundColor: 'var(--bg-main)' }}>
             {/* Tab Navigation Header */}
             <div
               style={{
@@ -358,15 +514,43 @@ export const App: React.FC = () => {
                 borderBottom: '1px solid var(--border-subtle)',
                 padding: '0 12px',
                 gap: '4px',
+                overflowX: 'auto',
               }}
             >
+              <button
+                className={`btn btn-sm ${activeTab === 'ai-candidates' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('ai-candidates')}
+              >
+                <Brain size={12} className="text-cyan-400" />
+                AI Proposals ({aiCandidates.length})
+              </button>
+
+              <button
+                className={`btn btn-sm ${activeTab === 'anomalies' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('anomalies')}
+              >
+                <ShieldAlert size={12} className={aiAnomalies.length > 0 ? 'text-red-400' : 'text-slate-400'} />
+                Anomalies ({aiAnomalies.length})
+              </button>
+
+              <button
+                className={`btn btn-sm ${activeTab === 'queue' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('queue')}
+              >
+                <ListOrdered size={12} />
+                Reviewer Queue ({reviewerQueue.length})
+              </button>
+
               <button
                 className={`btn btn-sm ${activeTab === 'validation' ? 'btn-primary' : ''}`}
                 style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
                 onClick={() => setActiveTab('validation')}
               >
                 <AlertTriangle size={12} />
-                Validation Issues ({blockerCount})
+                Validation ({blockerCount} Blockers)
               </button>
 
               <button
@@ -384,7 +568,7 @@ export const App: React.FC = () => {
                 onClick={() => setActiveTab('review')}
               >
                 <CheckSquare size={12} />
-                Human Review & Gate C
+                Review & Gate C
               </button>
 
               <button
@@ -393,7 +577,7 @@ export const App: React.FC = () => {
                 onClick={() => setActiveTab('revisions')}
               >
                 <GitCompare size={12} />
-                Revision Comparison ({revisions.length})
+                Revisions ({revisions.length})
               </button>
 
               <button
@@ -416,12 +600,71 @@ export const App: React.FC = () => {
                 }}
               >
                 <Download size={12} />
-                Structured Export
+                Export
               </button>
             </div>
 
             {/* Tab Body */}
-            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px' }}>
+              {activeTab === 'ai-candidates' && (
+                <AISuggestionsPanel
+                  candidates={aiCandidates}
+                  selectedCandidateId={selectedCandidateId}
+                  onSelectCandidate={(candId) => {
+                    setSelectedCandidateId(candId);
+                    const match = units.find((u) => u.level_code === aiCandidates.find((c) => c.candidate_id === candId)?.level_code);
+                    if (match) setSelectedUnitId(match.id);
+                  }}
+                  onAcceptCandidate={(cand) => setCandidateToAccept(cand)}
+                  onRejectCandidate={(cand) => setCandidateToReject(cand)}
+                  onExplainCandidate={(candId) => setCandidateToExplain(candId)}
+                  onTraceLineage={(candId) => {
+                    setTraceTargetId(candId);
+                    setIsTraceOriginOpen(true);
+                  }}
+                  onRunInference={handleRunInference}
+                  isLoading={isLoading}
+                />
+              )}
+
+              {activeTab === 'anomalies' && (
+                <AnomalyCenter
+                  anomalies={aiAnomalies}
+                  onInspectUnit={(levelCode) => {
+                    const match = units.find((u) => u.level_code === levelCode);
+                    if (match) setSelectedUnitId(match.id);
+                  }}
+                  onRequestCorrection={(levelCode) => {
+                    const match = units.find((u) => u.level_code === levelCode);
+                    if (match) {
+                      setSelectedUnitId(match.id);
+                      setIsCorrectionModalOpen(true);
+                    }
+                  }}
+                />
+              )}
+
+              {activeTab === 'queue' && (
+                <ReviewerQueuePanel
+                  queueItems={reviewerQueue}
+                  onSelectQueueItem={(item) => {
+                    if (item.affected_level) {
+                      const matchUnit = units.find((u) => u.level_code === item.affected_level);
+                      if (matchUnit) setSelectedUnitId(matchUnit.id);
+                      const matchCand = aiCandidates.find((c) => c.level_code === item.affected_level);
+                      if (matchCand) setSelectedCandidateId(matchCand.candidate_id);
+                    }
+                    if (item.item_type === 'BLOCKER') {
+                      setActiveTab('validation');
+                    } else if (item.item_type === 'ANOMALY') {
+                      setActiveTab('anomalies');
+                    } else {
+                      setActiveTab('ai-candidates');
+                    }
+                  }}
+                />
+              )}
+
               {activeTab === 'validation' && (
                 <ValidationCenter
                   summary={validationSummary}
@@ -505,6 +748,42 @@ export const App: React.FC = () => {
           isLoading={isLoading}
         />
       )}
+
+      {/* Slice 3: Trace Origin Lineage Modal */}
+      <TraceOriginModal
+        identifier={traceTargetId}
+        isOpen={isTraceOriginOpen}
+        onClose={() => setIsTraceOriginOpen(false)}
+      />
+
+      {/* Slice 3: Model Evaluation & Benchmark Modal */}
+      <ModelEvaluationModal
+        isOpen={isModelModalOpen}
+        onClose={() => setIsModelModalOpen(false)}
+      />
+
+      {/* Slice 3: Accept Candidate Modal */}
+      <AcceptCandidateModal
+        candidate={candidateToAccept}
+        isOpen={Boolean(candidateToAccept)}
+        onClose={() => setCandidateToAccept(null)}
+        onConfirm={handleAcceptCandidateConfirm}
+      />
+
+      {/* Slice 3: Reject Candidate Modal */}
+      <RejectCandidateModal
+        candidate={candidateToReject}
+        isOpen={Boolean(candidateToReject)}
+        onClose={() => setCandidateToReject(null)}
+        onConfirm={handleRejectCandidateConfirm}
+      />
+
+      {/* Slice 3: Explain Modal */}
+      <ExplainModal
+        candidateId={candidateToExplain}
+        isOpen={Boolean(candidateToExplain)}
+        onClose={() => setCandidateToExplain(null)}
+      />
     </div>
   );
 };

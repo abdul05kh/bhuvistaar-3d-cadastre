@@ -58,3 +58,23 @@ class EvidenceIntegrityError(BhuVistaarException):
     def __init__(self, message: str, details: Optional[dict[str, Any]] = None):
         super().__init__(message=message, code="EVIDENCE_INTEGRITY_MISMATCH", details=details)
 
+
+class AICandidateNotFoundError(BhuVistaarException):
+    def __init__(self, candidate_id: str):
+        super().__init__(message=f"AI Candidate with ID '{candidate_id}' not found.", code="AI_CANDIDATE_NOT_FOUND", details={"candidate_id": candidate_id})
+
+
+class AIOutputValidationError(BhuVistaarException):
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None):
+        super().__init__(message=message, code="AI_OUTPUT_VALIDATION_FAILED", details=details)
+
+
+class AIInferenceError(BhuVistaarException):
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None):
+        super().__init__(message=message, code="AI_INFERENCE_ERROR", details=details)
+
+
+class AIServiceDisabledError(BhuVistaarException):
+    def __init__(self):
+        super().__init__(message="AI assistance service is disabled by configuration (AI_ASSISTANCE_ENABLED=false). Core deterministic engine remains available.", code="AI_SERVICE_DISABLED")
+

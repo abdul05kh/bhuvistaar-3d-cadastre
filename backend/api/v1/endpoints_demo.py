@@ -24,6 +24,9 @@ def reset_demo(scenario: str = "defect", db: Session = Depends(get_db)):
     scenario: 'defect' (default, sets up VRT-003 0.50m overlap for golden path) or 'clean'.
     """
     # 1. Clean previous state
+    db.execute(text("DELETE FROM ai_anomalies;"))
+    db.execute(text("DELETE FROM ai_candidates;"))
+    db.execute(text("DELETE FROM ai_observations;"))
     db.execute(text("DELETE FROM export_records;"))
     db.execute(text("DELETE FROM audit_events;"))
     db.execute(text("DELETE FROM approval_decisions;"))

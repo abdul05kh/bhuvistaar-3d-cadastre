@@ -40,6 +40,34 @@ class AuditService:
         )
         return self.repo.append(event)
 
+    def record_event(
+        self,
+        action: AuditAction,
+        entity_type: str,
+        entity_id: str,
+        actor_id: str = "OFFICER-001",
+        authorization_mode: str = "SIMULATED_PROTOTYPE",
+        revision_id: Optional[UUID] = None,
+        previous_state: Optional[str] = None,
+        new_state: Optional[str] = None,
+        reason: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+        metadata: Optional[dict] = None
+    ) -> AuditEvent:
+        return self.log_event(
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            actor_id=actor_id,
+            authorization_mode=authorization_mode,
+            revision_id=revision_id,
+            previous_state=previous_state,
+            new_state=new_state,
+            reason=reason,
+            correlation_id=correlation_id,
+            metadata=metadata
+        )
+
     def get_events_for_revision(self, revision_id: UUID) -> list[AuditEvent]:
         return self.repo.find_by_revision(revision_id)
 

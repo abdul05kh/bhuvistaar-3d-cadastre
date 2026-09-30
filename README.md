@@ -29,16 +29,40 @@ BhuVistaar introduces a structured machine-assisted layer that:
 7. **Adjudicates Gate C approvals**: Prohibits approval if unresolved blockers or unreviewed states exist.
 8. **Logs append-only audit events and outputs structured JSON exports**: Captures the entire decision context for third-party auditing.
 9. **Provides an integrated 3D Cadastral Workspace (Slice 2)**: Three.js WebGL visualizer, conflict highlight box, unit inspector, revision diff, and judge walkthrough.
+10. **Delivers AI-Assisted Cadastral Intelligence (Slice 3)**: Controlled candidate spatial-unit generation, topology anomaly scanning, reviewer queue prioritization, and end-to-end data lineage (*Trace Origin*).
+
+---
+
+## 🤖 Slice 3 — AI Cadastral Intelligence Architecture
+
+> [!IMPORTANT]
+> **AI IS NOT THE AUTHORITY.**
+> ```
+> EVIDENCE → AI PROPOSAL → DETERMINISTIC ENGINE → GATE A/B VALIDATION → HUMAN REVIEW → GATE C APPROVAL
+> ```
+> AI output is strictly a proposal (`AI_CANDIDATE`). It never bypasses deterministic spatial validation or mandatory human officer adjudication.
+
+### The Four Intelligence Layers
+- **Layer A (Evidence Understanding)**: `evidence-extractor-001` normalizes architectural blueprints and drone survey evidence into structured `EvidenceObservation` items with SHA-256 checksum tracking.
+- **Layer B (Candidate Generation)**: `prismatic-candidate-001` proposes 3D spatial unit candidates with transparent reason codes and policy confidence bands (HIGH/MED/LOW).
+- **Layer C (Anomaly Detection)**: `cadastral-anomaly-001` independently scans vertical strata for collisions (`OVERLAPPING_LEVELS`), unexplained gaps, and multi-source evidence discrepancies.
+- **Layer D (Reviewer Intelligence)**: Prioritizes the Reviewer Attention Queue by urgency and generates fact-based cadastral explanations grounded in measured geometric facts.
+
+Detailed model disclosures and limitations:
+- [Model Card: Prismatic Candidate Generator](file:///d:/projects/BhuVistaar/docs/model-card-prismatic-candidate-001.md)
+- [Model Card: Cadastral Anomaly Detector](file:///d:/projects/BhuVistaar/docs/model-card-cadastral-anomaly-001.md)
+- [Full Slice 3 Specification](file:///d:/projects/BhuVistaar/docs/phase-3-ai-intelligence.md)
 
 ---
 
 ## 🛠️ Technology Stack
 - **Geospatial & Computational Geometry:** Shapely 2.0, PyProj 3.8, GeoAlchemy2, NumPy
 - **Authoritative Spatial Database:** PostgreSQL 16 + PostGIS 3.4 (`EPSG:32643` canonical metric storage)
-- **Database Migrations:** Alembic (upgradeable, downgradeable)
+- **Database Migrations:** Alembic (Migrations `001`, `002`, `003` for spatial schema, governance, and AI intelligence)
 - **Backend API:** FastAPI, Pydantic v2, SQLAlchemy 2.0, Uvicorn
-- **Frontend Workspace (Slice 2):** React, TypeScript, Three.js (WebGL 3D Viewer), Lucide Icons, Vite
-- **Quality Assurance & Verification:** Pytest, Hypothesis (property-based testing), HTTPX, TestClient
+- **AI & Evaluation Engine:** Rule-assisted statistical heuristics, empirical benchmark harness (`SYNTHETIC_CADASTRE_V1`)
+- **Frontend Workspace:** React, TypeScript, Three.js (WebGL 3D Viewer with translucent AI candidate meshes), Lucide Icons, Vite
+- **Quality Assurance & Verification:** Pytest, Hypothesis, TestClient (49 passing tests)
 
 ---
 
@@ -77,35 +101,38 @@ Workspace UI: `http://localhost:5173`
 
 ## 🧪 Verification & Automated Testing
 
-Run the full automated test suite (38 tests covering Slice 1A, Slice 1B, and Slice 2 E2E workflow):
+Run the full automated test suite (49 tests covering Slice 1A, Slice 1B, Slice 2 E2E, and Slice 3 AI pipeline):
 ```bash
 py -3.12 -m pytest tests/ -v
 ```
 
-Execute the dedicated Slice 2 Golden Path E2E workflow test:
+Execute the dedicated Slice 3 AI Pipeline integration test:
 ```bash
-py -3.12 -m pytest tests/integration/test_slice2_workspace_e2e.py -v
+py -3.12 -m pytest tests/integration/test_ai_pipeline_integration.py -v
 ```
 
-Execute the CLI 17-step demonstration script:
+Run empirical model evaluation against synthetic benchmark fixtures (Scenarios A through G):
 ```bash
-py -3.12 scripts/demo_slice1b_governance.py
+py -3.12 -m pytest tests/unit/test_ai_evaluator.py -v
 ```
 
 ---
 
-## 🎯 14-Step Judge Demonstration Flow
+## 🎯 Flagship Judge Demonstration Scenarios
 
-In the web interface (`http://localhost:5173`), click **"Judge Guide"**:
-1. **Load Defect Domain:** Ingests parcel `12345678901234` with 4 floors (`B1`, `G`, `L01`, `L02`).
-2. **Observe 3D Conflict:** Floor L01 (103.0m - 106.5m) collides with L02 (106.0m - 109.0m) by 0.50m. A glowing red translucent bounding box highlights the vertical conflict.
-3. **Attempt Premature Approval:** Gate C immediately blocks approval with HTTP 409 Conflict.
-4. **Submit Correction:** Click "Request Correction" on L01, adjust ceiling from `106.50m` $\to$ `106.00m`, and provide audit justification.
-5. **Observe Revision 2:** The backend spawns Revision 2 with a new deterministic VUID (`D4A2D4`), leaving historical Revision 1 completely intact.
-6. **Automatic Revalidation:** Blocker count drops to 0.
-7. **Officer Review:** Click "Accept" in the Human Review workspace.
-8. **Gate C Approval:** Click "Approve (Prototype Workflow)". The revision status transitions to `APPROVED`.
-9. **Audit Trail & Export:** Inspect the append-only audit timeline and download the deterministic structured JSON export.
+In the web interface (`http://localhost:5173`), choose a scenario from the top bar:
+1. **Flagship Golden Path (AI Proposal + VRT-003 Overlap Blocker)**:
+   - Click "1. Flagship" in the Demo Bar or "Regenerate Proposals".
+   - AI generates 4 candidate levels with explicit confidence scores and reason codes.
+   - Deterministic validator detects `VRT-003 BLOCKER` (0.50m collision between L01 and L02).
+   - Reviewer attempts Gate C approval $\to$ strictly blocked.
+   - Reviewer clicks "Request Correction" $\to$ adjusts ceiling from `106.50m` to `106.00m`.
+   - Backend creates Revision 2 with regenerated deterministic VUID. Historical Revision 1 is fully preserved.
+   - Automatic revalidation drops blockers to 0.
+   - Officer records "ACCEPT" review $\to$ Gate C approves $\to$ inspect audit trail and structured export.
+2. **Evidence Conflict Scenario**: Click "2. Conflict" to see conflicting drawing vs survey metadata flagged as an anomaly.
+3. **Low Confidence Proposal**: Click "3. Low Conf" to view an ambiguous sketch candidate flagged for mandatory on-site survey.
+4. **Trace Origin Lineage**: Click "Trace Origin" in the top bar to inspect the complete 8-stage cryptographic audit path.
 
 ---
 

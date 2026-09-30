@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     # Authorization mode banner
     AUTHORIZATION_MODE: str = "SIMULATED_PROTOTYPE"
 
+    # AI Intelligence Configuration (Slice 3)
+    AI_ASSISTANCE_ENABLED: bool = Field(default=True, description="Feature flag for AI assistance and candidate generation")
+    AI_CONFIDENCE_THRESHOLD_HIGH: float = Field(default=0.85, description="High confidence threshold policy")
+    AI_CONFIDENCE_THRESHOLD_MEDIUM: float = Field(default=0.60, description="Medium confidence threshold policy")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 

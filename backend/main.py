@@ -36,10 +36,12 @@ async def domain_exception_handler(request: Request, exc: BhuVistaarException):
     status_code = status.HTTP_400_BAD_REQUEST
     if exc.code in ("VALIDATION_BLOCKER_EXISTS", "APPROVAL_BLOCKED", "VUID_COLLISION"):
         status_code = status.HTTP_409_CONFLICT
-    elif exc.code in ("PARCEL_NOT_FOUND", "UNIT_NOT_FOUND", "EVIDENCE_NOT_FOUND", "REVISION_NOT_FOUND"):
+    elif exc.code in ("PARCEL_NOT_FOUND", "UNIT_NOT_FOUND", "EVIDENCE_NOT_FOUND", "REVISION_NOT_FOUND", "AI_CANDIDATE_NOT_FOUND"):
         status_code = status.HTTP_404_NOT_FOUND
-    elif exc.code in ("EVIDENCE_INTEGRITY_MISMATCH", "INVALID_GEOMETRY", "INVALID_CRS"):
+    elif exc.code in ("EVIDENCE_INTEGRITY_MISMATCH", "INVALID_GEOMETRY", "INVALID_CRS", "AI_OUTPUT_VALIDATION_FAILED"):
         status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    elif exc.code == "AI_SERVICE_DISABLED":
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
 
     return JSONResponse(

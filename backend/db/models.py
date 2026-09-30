@@ -220,3 +220,95 @@ class ExportRecordModel(Base):
     content_json = Column("content", JSON, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
+
+# ==============================================================================
+# SLICE 3 — AI INTELLIGENCE LAYER MODELS
+# ==============================================================================
+
+class AIModelRegistryModel(Base):
+    __tablename__ = "ai_model_registry"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_id = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(128), nullable=False)
+    version = Column(String(32), nullable=False)
+    task = Column(String(128), nullable=False)
+    status = Column(String(32), nullable=False, default="PROTOTYPE")
+    description = Column(Text, nullable=False)
+    metadata_json = Column("metadata", JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class EvidenceObservationModel(Base):
+    __tablename__ = "ai_observations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    evidence_id = Column(String(64), ForeignKey("evidence_sources.id", ondelete="CASCADE"), nullable=False, index=True)
+    parent_ulpin = Column(String(14), ForeignKey("parent_parcels.ulpin", ondelete="CASCADE"), nullable=False, index=True)
+    observation_type = Column(String(64), nullable=False, index=True)
+    semantic_level = Column(String(32), nullable=True)
+    z_min = Column(Numeric(8, 3), nullable=True)
+    z_max = Column(Numeric(8, 3), nullable=True)
+    confidence = Column(Numeric(5, 4), nullable=False, default=0.9000)
+    source_reference = Column(String(255), nullable=False)
+    extraction_method = Column(String(64), nullable=False)
+    extraction_version = Column(String(32), nullable=False, default="1.0.0")
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    geometry_geojson = Column("geometry_geojson", JSON, nullable=True)
+    input_checksum = Column(String(64), nullable=False)
+    metadata_json = Column("metadata", JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class AICandidateModel(Base):
+    __tablename__ = "ai_candidates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    candidate_id = Column(String(64), unique=True, nullable=False, index=True)
+    parent_ulpin = Column(String(14), ForeignKey("parent_parcels.ulpin", ondelete="CASCADE"), nullable=False, index=True)
+    level_code = Column(String(32), nullable=False, index=True)
+    semantic_type = Column(String(64), nullable=False)
+    z_min = Column(Numeric(8, 3), nullable=False)
+    z_max = Column(Numeric(8, 3), nullable=False)
+    confidence = Column(Numeric(5, 4), nullable=False)
+    confidence_band = Column(String(16), nullable=False)
+    status = Column(String(32), nullable=False, default="AI_CANDIDATE", index=True)
+    source_evidence_ids = Column("source_evidence_ids", JSON, nullable=False, default=list)
+    reason_codes = Column("reason_codes", JSON, nullable=False, default=list)
+    footprint_geojson = Column("footprint_geojson", JSON, nullable=False)
+    footprint_area_sqm = Column(Numeric(12, 3), nullable=False)
+    volume_cbm = Column(Numeric(14, 3), nullable=False)
+    centroid_x = Column(Numeric(12, 3), nullable=False)
+    centroid_y = Column(Numeric(12, 3), nullable=False)
+    centroid_z = Column(Numeric(8, 3), nullable=False)
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    governed_unit_id = Column(UUID(as_uuid=True), ForeignKey("spatial_units.id", ondelete="SET NULL"), nullable=True)
+    governed_revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="SET NULL"), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+    reviewed_by = Column(String(128), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class AIAnomalyModel(Base):
+    __tablename__ = "ai_anomalies"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    anomaly_id = Column(String(64), unique=True, nullable=False, index=True)
+    parent_ulpin = Column(String(14), ForeignKey("parent_parcels.ulpin", ondelete="CASCADE"), nullable=False, index=True)
+    anomaly_type = Column(String(64), nullable=False, index=True)
+    severity = Column(String(16), nullable=False, index=True)
+    affected_units = Column("affected_units", JSON, nullable=False, default=list)
+    evidence_ids = Column("evidence_ids", JSON, nullable=False, default=list)
+    confidence = Column(Numeric(5, 4), nullable=False, default=0.9000)
+    reason_codes = Column("reason_codes", JSON, nullable=False, default=list)
+    recommended_action = Column(Text, nullable=False)
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    resolved = Column(Boolean, nullable=False, default=False)
+    resolution_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+

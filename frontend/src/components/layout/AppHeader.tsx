@@ -6,8 +6,12 @@ interface AppHeaderProps {
   ulpin: string;
   status: UnitStatus | string;
   blockerCount: number;
+  candidateCount?: number;
+  anomalyCount?: number;
   onResetDemo: () => void;
   onToggleDemoGuide: () => void;
+  onOpenTraceOrigin?: () => void;
+  onOpenModelCards?: () => void;
   isDemoGuideOpen: boolean;
   isLoading: boolean;
 }
@@ -16,8 +20,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   ulpin,
   status,
   blockerCount,
+  candidateCount = 0,
+  anomalyCount = 0,
   onResetDemo,
   onToggleDemoGuide,
+  onOpenTraceOrigin,
+  onOpenModelCards,
   isDemoGuideOpen,
   isLoading,
 }) => {
@@ -122,8 +130,48 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <span>SIMULATED_PROTOTYPE</span>
         </div>
 
+        {/* AI Intelligence Badge */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '5px',
+          backgroundColor: 'rgba(6, 182, 212, 0.1)',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
+          fontSize: '11px',
+          fontFamily: 'monospace',
+          color: '#22d3ee'
+        }} title="AI Intelligence Summary">
+          <span>AI:</span>
+          <span style={{ fontWeight: 700 }}>{candidateCount} Cand</span>
+          {anomalyCount > 0 && (
+            <span style={{ color: '#f87171' }}>• {anomalyCount} Anom</span>
+          )}
+        </div>
+
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onOpenTraceOrigin && (
+            <button
+              className="btn btn-sm"
+              onClick={onOpenTraceOrigin}
+              title="Trace full end-to-end data lineage graph"
+              style={{ borderColor: 'rgba(168, 85, 247, 0.4)', color: '#c084fc' }}
+            >
+              Trace Origin
+            </button>
+          )}
+          {onOpenModelCards && (
+            <button
+              className="btn btn-sm"
+              onClick={onOpenModelCards}
+              title="Model cards, disclosures, and benchmark harness"
+              style={{ borderColor: 'rgba(6, 182, 212, 0.4)', color: '#38bdf8' }}
+            >
+              AI Models
+            </button>
+          )}
           <button
             className={`btn btn-sm ${isDemoGuideOpen ? 'btn-primary' : ''}`}
             onClick={onToggleDemoGuide}
