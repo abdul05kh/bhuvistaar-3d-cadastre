@@ -1,0 +1,43 @@
+[project]
+name = "bhuvistaar-3d-cadastre"
+version = "0.1.0"
+description = "Machine-assisted 3D Cadastral Intelligence & Validation Platform (Prototype)"
+authors = [
+    { name = "Mohammad Abdul Kalam Hussain", email = "abdul05kh.college@gmail.com" },
+    { name = "Siri Chandana", email = "kotagirisirichandana73@gmail.com" },
+    { name = "Mohammad Zakiruddin", email = "zakirmd.1805@gmail.com" },
+    { name = "Mohammed Numan", email = "mohammednumaan901@gmail.com" },
+    { name = "Manivarun Chintala", email = "manivarunchintala2005.2728@gmail.com" },
+    { name = "Thaniska", email = "ramatenkithanishka@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "shapely>=2.0.6",
+    "pyproj>=3.6.1",
+    "sqlalchemy>=2.0.35",
+    "geoalchemy2>=0.15.0",
+    "psycopg[binary]>=3.2.0",
+    "alembic>=1.13.0",
+    "httpx>=0.27.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "hypothesis>=6.112.0",
+    "pytest-asyncio>=0.24.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"

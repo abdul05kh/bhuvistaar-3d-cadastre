@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: bhuvistaar-postgis
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: bhuvistaar_cadastre
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bhuvistaar_cadastre"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: bhuvistaar-backend
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:postgrespassword@db:5432/bhuvistaar_cadastre
+      - CANONICAL_STORAGE_SRID=32643
+      - CANONICAL_STORAGE_CRS=EPSG:32643
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgis_data:
