@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+from shapely.geometry import Polygon
 from sqlalchemy.orm import Session
 from geoalchemy2.shape import from_shape, to_shape
 from backend.db.models import SpatialUnitModel, unit_evidence_links, EvidenceSourceModel
@@ -73,6 +74,43 @@ class SpatialUnitRepository:
     def find_by_parent_ulpin(self, ulpin: str) -> list[SpatialUnit3D]:
         models = self.db.query(SpatialUnitModel).filter_by(parent_ulpin=ulpin).order_by(SpatialUnitModel.z_min).all()
         return [self._to_domain(m) for m in models]
+
+    def set_active_revision(self, unit_id: UUID, revision_id: UUID) -> None:
+        model = self.db.query(SpatialUnitModel).filter_by(id=unit_id).first()
+        if model:
+            model.active_revision_id = revision_id
+            self.db.commit()
+
+    def update_from_revision(
+        self,
+        unit_id: UUID,
+        revision_id: UUID,
+        vuid: str,
+        vuid_hash: str,
+        footprint: Polygon,
+        z_min: float,
+        z_max: float,
+        status: UnitStatus,
+        area_sqm: float,
+        volume_cbm: float,
+        centroid: tuple[float, float, float]
+    ) -> None:
+        model = self.db.query(SpatialUnitModel).filter_by(id=unit_id).first()
+        if model:
+            model.active_revision_id = revision_id
+            model.prototype_vuid = vuid
+            model.vuid_full_hash = vuid_hash
+            model.footprint_geom = from_shape(footprint, srid=settings.CANONICAL_STORAGE_SRID)
+            model.z_min = z_min
+            model.z_max = z_max
+            model.footprint_area_sqm = area_sqm
+            model.volume_cbm = volume_cbm
+            model.centroid_x = centroid[0]
+            model.centroid_y = centroid[1]
+            model.centroid_z = centroid[2]
+            model.status = status.value
+            self.db.commit()
+
 
     def _to_domain(self, model: SpatialUnitModel) -> SpatialUnit3D:
         shapely_poly = to_shape(model.footprint_geom)

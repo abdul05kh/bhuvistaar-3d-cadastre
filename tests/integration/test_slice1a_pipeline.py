@@ -80,6 +80,13 @@ class MockSpatialUnitRepo:
         units = [u for u in self.db.units.values() if u.parent_ulpin == ulpin]
         return sorted(units, key=lambda u: u.z_min)
 
+    def set_active_revision(self, unit_id, revision_id):
+        pass
+
+    def update_from_revision(self, unit_id, revision_id, vuid, vuid_hash, footprint, z_min, z_max, status, area_sqm, volume_cbm, centroid):
+        pass
+
+
 
 class MockIssueRepo:
     def __init__(self, db: InMemoryDB):

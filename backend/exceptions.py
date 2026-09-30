@@ -42,3 +42,19 @@ class UnitNotFoundError(BhuVistaarException):
 class EvidenceNotFoundError(BhuVistaarException):
     def __init__(self, evidence_id: str):
         super().__init__(message=f"Evidence source with ID '{evidence_id}' not found.", code="EVIDENCE_NOT_FOUND", details={"evidence_id": evidence_id})
+
+
+class RevisionNotFoundError(BhuVistaarException):
+    def __init__(self, revision_id: str):
+        super().__init__(message=f"Spatial unit revision '{revision_id}' not found.", code="REVISION_NOT_FOUND", details={"revision_id": str(revision_id)})
+
+
+class ApprovalBlockedError(BhuVistaarException):
+    def __init__(self, reason: str, details: Optional[dict[str, Any]] = None):
+        super().__init__(message=f"Approval blocked: {reason}", code="APPROVAL_BLOCKED", details=details)
+
+
+class EvidenceIntegrityError(BhuVistaarException):
+    def __init__(self, message: str, details: Optional[dict[str, Any]] = None):
+        super().__init__(message=message, code="EVIDENCE_INTEGRITY_MISMATCH", details=details)
+

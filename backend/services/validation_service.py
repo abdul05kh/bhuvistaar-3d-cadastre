@@ -68,10 +68,46 @@ class ValidationService:
                 )
             )
 
+        # Persist ValidationRun entity first (foreign key for validation_issues)
+        from backend.domain.validation_run import ValidationRun
+        from backend.domain.enums import GateType, AuditAction
+        from backend.repository.validation_run_repository import ValidationRunRepository
+        from backend.services.audit_service import AuditService
+
+        run_repo = ValidationRunRepository(self.db)
+        audit_service = AuditService(self.db)
+
+        can_approve = (blocker_count == 0)
+
+        val_run = ValidationRun(
+            id=run_id,
+            parent_ulpin=ulpin,
+            gate=GateType.GATE_A,
+            validator_version="1.0.0",
+            rules_evaluated=len(issues),
+            passed_rules=passed_rules,
+            failed_rules=len(issues) - passed_rules,
+            blocker_count=blocker_count,
+            error_count=error_count,
+            warning_count=warning_count,
+            can_approve=can_approve,
+            created_at=now
+        )
+        run_repo.save(val_run)
+
         # Persist issues
         self.issue_repo.save_issues(issues)
 
-        can_approve = (blocker_count == 0)
+        # Audit event
+        audit_service.log_event(
+            action=AuditAction.VALIDATION_EXECUTED,
+            entity_type="PARCEL",
+            entity_id=ulpin,
+            correlation_id=str(run_id),
+            new_state="VALIDATED" if can_approve else "VALIDATION_FAILED",
+            reason=f"Gate A validation completed: {blocker_count} blockers, {warning_count} warnings.",
+            metadata={"run_id": str(run_id), "rules_evaluated": len(issues), "blocker_count": blocker_count}
+        )
 
         return ValidationSummaryResponse(
             run_id=str(run_id),
@@ -86,3 +122,4 @@ class ValidationService:
             can_approve=can_approve,
             issues=issue_responses
         )
+

@@ -43,3 +43,38 @@ def get_spatial_unit(vuid: str, db: Session = Depends(get_db)):
         polyhedron_wkt=u.polyhedron_wkt,
         created_at=u.created_at
     )
+
+
+@router.get("/{vuid}/revisions")
+def list_revisions(vuid: str, db: Session = Depends(get_db)):
+    from backend.repository.revision_repository import RevisionRepository
+    from backend.db.models import SpatialUnitRevisionModel
+    unit_repo = SpatialUnitRepository(db)
+    u = unit_repo.find_by_vuid(vuid)
+    if u:
+        unit_id = u.id
+    else:
+        # Check historical revision table
+        rev_match = db.query(SpatialUnitRevisionModel).filter_by(prototype_vuid=vuid).first()
+        if not rev_match:
+            raise UnitNotFoundError(vuid)
+        unit_id = rev_match.unit_id
+
+    rev_repo = RevisionRepository(db)
+    revisions = rev_repo.find_by_unit_id(unit_id)
+    return [
+        {
+            "id": str(r.id),
+            "revision_number": r.revision_number,
+            "prototype_vuid": r.prototype_vuid,
+            "level_code": r.level_code,
+            "z_min": r.z_min,
+            "z_max": r.z_max,
+            "status": r.status.value,
+            "predecessor_revision_id": str(r.predecessor_revision_id) if r.predecessor_revision_id else None,
+            "created_by": r.created_by,
+            "created_at": r.created_at.isoformat()
+        }
+        for r in revisions
+    ]
+

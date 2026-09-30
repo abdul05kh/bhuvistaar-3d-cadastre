@@ -34,12 +34,13 @@ async def domain_exception_handler(request: Request, exc: BhuVistaarException):
     logger.warning(f"Domain error [{exc.code}] on {request.method} {request.url.path}: {exc.message}")
     
     status_code = status.HTTP_400_BAD_REQUEST
-    if exc.code == "VALIDATION_BLOCKER_EXISTS":
+    if exc.code in ("VALIDATION_BLOCKER_EXISTS", "APPROVAL_BLOCKED", "VUID_COLLISION"):
         status_code = status.HTTP_409_CONFLICT
-    elif exc.code in ("PARCEL_NOT_FOUND", "UNIT_NOT_FOUND", "EVIDENCE_NOT_FOUND"):
+    elif exc.code in ("PARCEL_NOT_FOUND", "UNIT_NOT_FOUND", "EVIDENCE_NOT_FOUND", "REVISION_NOT_FOUND"):
         status_code = status.HTTP_404_NOT_FOUND
-    elif exc.code == "VUID_COLLISION":
-        status_code = status.HTTP_409_CONFLICT
+    elif exc.code in ("EVIDENCE_INTEGRITY_MISMATCH", "INVALID_GEOMETRY", "INVALID_CRS"):
+        status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
 
     return JSONResponse(
         status_code=status_code,

@@ -25,10 +25,26 @@ from backend.validation.rules.gate_a_identity import (
 )
 
 
+from backend.validation.rules.gate_b_provenance import (
+    RuleProv001ParentLinkage,
+    RuleProv002EvidenceAttached,
+    RuleProv003EvidenceIntegrity,
+    RuleProv004GenerationProvenance
+)
+from backend.domain.enums import GateType
+
+
 class ValidationRunner:
-    def __init__(self, rules: Sequence[BaseValidationRule] = None):
+    def __init__(self, rules: Sequence[BaseValidationRule] = None, gate: GateType = GateType.GATE_A, evidence_sources: dict = None):
         if rules is not None:
             self.rules = list(rules)
+        elif gate == GateType.GATE_B:
+            self.rules = [
+                RuleProv001ParentLinkage(),
+                RuleProv002EvidenceAttached(),
+                RuleProv003EvidenceIntegrity(evidence_sources=evidence_sources),
+                RuleProv004GenerationProvenance()
+            ]
         else:
             # Default Gate A Rule Suite
             self.rules = [
@@ -43,6 +59,7 @@ class ValidationRunner:
                 RuleId002VuidUniqueness(),
                 RuleId003VuidDeterminism()
             ]
+
 
     def execute(
         self,

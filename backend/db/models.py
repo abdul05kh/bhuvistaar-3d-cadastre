@@ -50,6 +50,7 @@ class EvidenceSourceModel(Base):
     provider = Column(String(128), nullable=False)
     source_reference = Column(String(255), nullable=False)
     checksum = Column(String(64), nullable=False)
+    checksum_algorithm = Column(String(32), nullable=False, default="SHA-256")
     crs = Column(String(32), nullable=True)
     acquisition_time = Column(DateTime(timezone=True), nullable=True)
     processing_version = Column(String(32), nullable=False, default="1.0.0")
@@ -61,6 +62,7 @@ class SpatialUnitModel(Base):
     __tablename__ = "spatial_units"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    active_revision_id = Column(UUID(as_uuid=True), nullable=True)
     prototype_vuid = Column(String(64), unique=True, nullable=False, index=True)
     parent_parcel_id = Column(UUID(as_uuid=True), ForeignKey("parent_parcels.id", ondelete="CASCADE"), nullable=False, index=True)
     parent_ulpin = Column(String(14), nullable=False, index=True)
@@ -84,11 +86,72 @@ class SpatialUnitModel(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+class SpatialUnitRevisionModel(Base):
+    __tablename__ = "spatial_unit_revisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    unit_id = Column(UUID(as_uuid=True), ForeignKey("spatial_units.id", ondelete="CASCADE"), nullable=False, index=True)
+    revision_number = Column(Integer, nullable=False)
+    prototype_vuid = Column(String(64), nullable=False, index=True)
+    parent_ulpin = Column(String(14), nullable=False, index=True)
+    semantic_type = Column(String(64), nullable=False)
+    level_code = Column(String(16), nullable=False)
+    z_min = Column(Numeric(8, 3), nullable=False)
+    z_max = Column(Numeric(8, 3), nullable=False)
+    footprint_area_sqm = Column(Numeric(12, 3), nullable=False)
+    volume_cbm = Column(Numeric(14, 3), nullable=False)
+    centroid_x = Column(Numeric(12, 3), nullable=False)
+    centroid_y = Column(Numeric(12, 3), nullable=False)
+    centroid_z = Column(Numeric(8, 3), nullable=False)
+    footprint_geom = Column(Geometry(geometry_type="POLYGON", srid=settings.CANONICAL_STORAGE_SRID), nullable=False)
+    polyhedron_wkt = Column(Text, nullable=True)
+    vuid_full_hash = Column(String(64), nullable=False)
+    predecessor_revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="SET NULL"), nullable=True)
+    status = Column(String(32), nullable=False, default="GENERATED")
+    created_by = Column(String(128), nullable=False, default="SYSTEM")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ProvenanceRecordModel(Base):
+    __tablename__ = "provenance_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="CASCADE"), nullable=False, index=True)
+    parent_ulpin = Column(String(14), nullable=False, index=True)
+    generation_method = Column(String(64), nullable=False, default="PRISMATIC_EXTRUSION")
+    generation_method_version = Column(String(32), nullable=False, default="1.0.0")
+    vuid_algorithm_version = Column(String(16), nullable=False, default="v1")
+    predecessor_vuid = Column(String(64), nullable=True)
+    evidence_sources_json = Column("evidence_sources", JSON, nullable=False, default=list)
+    is_verified = Column(Boolean, nullable=False, default=False)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ValidationRunModel(Base):
+    __tablename__ = "validation_runs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    parent_ulpin = Column(String(14), nullable=False, index=True)
+    unit_id = Column(UUID(as_uuid=True), ForeignKey("spatial_units.id", ondelete="SET NULL"), nullable=True)
+    revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="SET NULL"), nullable=True)
+    gate = Column(String(16), nullable=False, default="GATE_A")
+    validator_version = Column(String(32), nullable=False, default="1.0.0")
+    rules_evaluated = Column(Integer, nullable=False, default=0)
+    passed_rules = Column(Integer, nullable=False, default=0)
+    failed_rules = Column(Integer, nullable=False, default=0)
+    blocker_count = Column(Integer, nullable=False, default=0)
+    error_count = Column(Integer, nullable=False, default=0)
+    warning_count = Column(Integer, nullable=False, default=0)
+    can_approve = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
 class ValidationIssueModel(Base):
     __tablename__ = "validation_issues"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    run_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    run_id = Column(UUID(as_uuid=True), ForeignKey("validation_runs.id", ondelete="CASCADE"), nullable=False, index=True)
     rule_code = Column(String(32), nullable=False)
     severity = Column(String(16), nullable=False, index=True)
     object_type = Column(String(32), nullable=False)
@@ -99,3 +162,61 @@ class ValidationIssueModel(Base):
     threshold = Column(JSON, nullable=True)
     suggested_action = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ReviewDecisionModel(Base):
+    __tablename__ = "review_decisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="CASCADE"), nullable=False, index=True)
+    reviewer_id = Column(String(128), nullable=False)
+    actor_context = Column(String(64), nullable=False, default="SIMULATED_PROTOTYPE")
+    decision = Column(String(32), nullable=False)
+    reason = Column(Text, nullable=False)
+    referenced_validation_run_id = Column(UUID(as_uuid=True), ForeignKey("validation_runs.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ApprovalDecisionModel(Base):
+    __tablename__ = "approval_decisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="CASCADE"), nullable=False, index=True)
+    approver_id = Column(String(128), nullable=False)
+    actor_context = Column(String(64), nullable=False, default="SIMULATED_PROTOTYPE")
+    status = Column(String(32), nullable=False)
+    reason = Column(Text, nullable=False)
+    referenced_validation_run_id = Column(UUID(as_uuid=True), ForeignKey("validation_runs.id", ondelete="CASCADE"), nullable=False)
+    referenced_review_id = Column(UUID(as_uuid=True), ForeignKey("review_decisions.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class AuditEventModel(Base):
+    __tablename__ = "audit_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    actor_id = Column(String(128), nullable=False)
+    authorization_mode = Column(String(64), nullable=False, default="SIMULATED_PROTOTYPE")
+    action = Column(String(64), nullable=False, index=True)
+    entity_type = Column(String(64), nullable=False, index=True)
+    entity_id = Column(String(128), nullable=False, index=True)
+    revision_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    previous_state = Column(String(32), nullable=True)
+    new_state = Column(String(32), nullable=True)
+    reason = Column(Text, nullable=True)
+    correlation_id = Column(String(64), nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=False, default=dict)
+
+
+class ExportRecordModel(Base):
+    __tablename__ = "export_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    revision_id = Column(UUID(as_uuid=True), ForeignKey("spatial_unit_revisions.id", ondelete="CASCADE"), nullable=False, index=True)
+    export_format = Column(String(16), nullable=False, default="JSON")
+    checksum = Column(String(64), nullable=False)
+    exported_by = Column(String(128), nullable=False)
+    content_json = Column("content", JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
