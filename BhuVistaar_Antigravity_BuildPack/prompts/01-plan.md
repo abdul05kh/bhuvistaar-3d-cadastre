@@ -1,1 +1,0 @@
-Do not edit yet. Inspect repository and all BhuVistaar docs. Identify current stack, missing pieces, dependency order, geometry/CRS risks, test plan, and smallest vertical slice. End with an actionable implementation plan and stop.
