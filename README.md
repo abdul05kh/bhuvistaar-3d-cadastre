@@ -30,39 +30,46 @@ BhuVistaar introduces a structured machine-assisted layer that:
 8. **Logs append-only audit events and outputs structured JSON exports**: Captures the entire decision context for third-party auditing.
 9. **Provides an integrated 3D Cadastral Workspace (Slice 2)**: Three.js WebGL visualizer, conflict highlight box, unit inspector, revision diff, and judge walkthrough.
 10. **Delivers AI-Assisted Cadastral Intelligence (Slice 3)**: Controlled candidate spatial-unit generation, topology anomaly scanning, reviewer queue prioritization, and end-to-end data lineage (*Trace Origin*).
+11. **Validation Intelligence, Explainability & Reproducibility (Slice 4)**: Explicit AI vs Validation Disagreement Engine (Cases A, B, C, D), cryptographic SHA-256 reproducibility snapshots, transparent validation breakdown, side-by-side evidence triad, and 10-scenario empirical evaluation harness.
 
 ---
 
-## 🤖 Slice 3 — AI Cadastral Intelligence Architecture
+## 🤖 Slice 3 & 4 — AI Intelligence & Validation Explainability
 
 > [!IMPORTANT]
 > **AI IS NOT THE AUTHORITY.**
 > ```
-> EVIDENCE → AI PROPOSAL → DETERMINISTIC ENGINE → GATE A/B VALIDATION → HUMAN REVIEW → GATE C APPROVAL
+> EVIDENCE → AI PROPOSAL → DETERMINISTIC ENGINE → GATE A/B VALIDATION → DISAGREEMENT DETECTION → HUMAN REVIEW → GATE C APPROVAL
 > ```
 > AI output is strictly a proposal (`AI_CANDIDATE`). It never bypasses deterministic spatial validation or mandatory human officer adjudication.
 
-### The Four Intelligence Layers
-- **Layer A (Evidence Understanding)**: `evidence-extractor-001` normalizes architectural blueprints and drone survey evidence into structured `EvidenceObservation` items with SHA-256 checksum tracking.
-- **Layer B (Candidate Generation)**: `prismatic-candidate-001` proposes 3D spatial unit candidates with transparent reason codes and policy confidence bands (HIGH/MED/LOW).
-- **Layer C (Anomaly Detection)**: `cadastral-anomaly-001` independently scans vertical strata for collisions (`OVERLAPPING_LEVELS`), unexplained gaps, and multi-source evidence discrepancies.
-- **Layer D (Reviewer Intelligence)**: Prioritizes the Reviewer Attention Queue by urgency and generates fact-based cadastral explanations grounded in measured geometric facts.
+### Core Capabilities
+- **AI vs Validation Disagreement Engine**: Detects and logs tensions between machine proposals and deterministic geometry:
+  - **Case A (`AI_VALIDATION_DISAGREEMENT`)**: Model proposed high confidence candidate, but deterministic validation detects physical collision (`VRT-003`) $\to$ Blocker prevents approval.
+  - **Case B (`LOW_AI_CONFIDENCE_GEOMETRICALLY_VALID`)**: Model reported weak evidence, but geometry passes clean.
+  - **Case C (`CONSISTENT`)**: Model and validation agree.
+  - **Case D (`HUMAN_OVERRIDE_OF_AI_PROPOSAL`)**: Human officer rejects machine suggestion $\to$ permanently recorded in audit trail.
+- **Cryptographic Reproducibility Snapshots**: SHA-256 snapshot hashes pinning input evidence checksums, geometry, explicit CRS, model configuration hashes, ruleset versions, and software commit references with dynamic verification.
+- **Fact-Grounded Validation Explainability**: Transparent breakdown of physical gaps, overlaps, and boundary breaches with zero hallucination risk.
+- **Model Comparison**: Empirical delta reporting between candidate models and baselines without marketing superlatives.
+- **10-Scenario Benchmark Harness**: Controlled evaluation across 10 synthetic cadastral scenarios labeled `SYNTHETIC_PROTOTYPE_EVALUATION`.
 
-Detailed model disclosures and limitations:
+Detailed specifications and model cards:
+- [Full Slice 4 Specification](file:///d:/projects/BhuVistaar/docs/phase-2-slice-4.md)
+- [Full Slice 3 Specification](file:///d:/projects/BhuVistaar/docs/phase-3-ai-intelligence.md)
 - [Model Card: Prismatic Candidate Generator](file:///d:/projects/BhuVistaar/docs/model-card-prismatic-candidate-001.md)
 - [Model Card: Cadastral Anomaly Detector](file:///d:/projects/BhuVistaar/docs/model-card-cadastral-anomaly-001.md)
-- [Full Slice 3 Specification](file:///d:/projects/BhuVistaar/docs/phase-3-ai-intelligence.md)
 
 ---
 
 ## 🛠️ Technology Stack
 - **Geospatial & Computational Geometry:** Shapely 2.0, PyProj 3.8, GeoAlchemy2, NumPy
 - **Authoritative Spatial Database:** PostgreSQL 16 + PostGIS 3.4 (`EPSG:32643` canonical metric storage)
-- **Database Migrations:** Alembic (Migrations `001`, `002`, `003` for spatial schema, governance, and AI intelligence)
+- **Database Migrations:** Alembic (Migrations `001`, `002`, `003`, `004` for spatial schema, governance, AI intelligence, and reproducibility snapshots)
 - **Backend API:** FastAPI, Pydantic v2, SQLAlchemy 2.0, Uvicorn
-- **AI & Evaluation Engine:** Rule-assisted statistical heuristics, empirical benchmark harness (`SYNTHETIC_CADASTRE_V1`)
+- **AI & Evaluation Engine:** Rule-assisted statistical heuristics, 10-scenario empirical benchmark harness (`SYNTHETIC_PROTOTYPE_EVALUATION`)
 - **Frontend Workspace:** React, TypeScript, Three.js (WebGL 3D Viewer with translucent AI candidate meshes), Lucide Icons, Vite
-- **Quality Assurance & Verification:** Pytest, Hypothesis, TestClient (49 passing tests)
+- **Quality Assurance & Verification:** Pytest, Hypothesis, TestClient (56 passing tests)
 
 ---
 
@@ -101,17 +108,17 @@ Workspace UI: `http://localhost:5173`
 
 ## 🧪 Verification & Automated Testing
 
-Run the full automated test suite (49 tests covering Slice 1A, Slice 1B, Slice 2 E2E, and Slice 3 AI pipeline):
+Run the full automated test suite (56 tests covering Slice 1A, Slice 1B, Slice 2 E2E, Slice 3 AI, and Slice 4 Validation Intelligence):
 ```bash
 py -3.12 -m pytest tests/ -v
 ```
 
-Execute the dedicated Slice 3 AI Pipeline integration test:
+Execute the dedicated Slice 4 Validation Intelligence & Reproducibility integration test:
 ```bash
-py -3.12 -m pytest tests/integration/test_ai_pipeline_integration.py -v
+py -3.12 -m pytest tests/integration/test_slice4_integration.py -v
 ```
 
-Run empirical model evaluation against synthetic benchmark fixtures (Scenarios A through G):
+Run empirical model evaluation against the 10 synthetic benchmark scenarios:
 ```bash
 py -3.12 -m pytest tests/unit/test_ai_evaluator.py -v
 ```

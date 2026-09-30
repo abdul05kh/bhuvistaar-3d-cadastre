@@ -8,10 +8,12 @@ interface AppHeaderProps {
   blockerCount: number;
   candidateCount?: number;
   anomalyCount?: number;
+  disagreementCount?: number;
   onResetDemo: () => void;
   onToggleDemoGuide: () => void;
   onOpenTraceOrigin?: () => void;
   onOpenModelCards?: () => void;
+  onOpenCompareModels?: () => void;
   isDemoGuideOpen: boolean;
   isLoading: boolean;
 }
@@ -22,10 +24,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   blockerCount,
   candidateCount = 0,
   anomalyCount = 0,
+  disagreementCount = 0,
   onResetDemo,
   onToggleDemoGuide,
   onOpenTraceOrigin,
   onOpenModelCards,
+  onOpenCompareModels,
   isDemoGuideOpen,
   isLoading,
 }) => {
@@ -152,6 +156,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onOpenCompareModels && (
+            <button
+              className="btn btn-sm"
+              onClick={onOpenCompareModels}
+              title="Compare model behavior against deterministic baseline"
+              style={{ borderColor: 'rgba(234, 179, 8, 0.4)', color: '#facc15' }}
+            >
+              Compare Models
+            </button>
+          )}
           {onOpenTraceOrigin && (
             <button
               className="btn btn-sm"

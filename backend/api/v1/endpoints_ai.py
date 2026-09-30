@@ -31,10 +31,22 @@ from backend.ai.schemas.summary import (
 )
 from backend.ai.schemas.lineage import TraceOriginResponse
 from backend.ai.schemas.registry import ModelRegistryResponse, ModelCard
-from backend.db.models import AICandidateModel, AIAnomalyModel, ValidationIssueModel
+from backend.ai.schemas.disagreement import DisagreementListResponse
+from backend.ai.schemas.reproducibility import ReproducibilitySnapshotResponse, ReproducibilityVerificationRequest
+from backend.ai.schemas.model_comparison import ModelComparisonRequest, ModelComparisonResponse
+from backend.ai.services.disagreement_engine import ValidationDisagreementEngine
+from backend.ai.services.reproducibility_service import ReproducibilityService
+from backend.ai.services.model_comparison_service import ModelComparisonService
+from backend.db.models import (
+    AICandidateModel,
+    AIAnomalyModel,
+    ValidationIssueModel,
+    ValidationRunModel,
+    EvaluationRunModel
+)
 from backend.exceptions import AICandidateNotFoundError
 
-router = APIRouter(prefix="/ai", tags=["AI Intelligence (Slice 3)"])
+router = APIRouter(prefix="/ai", tags=["AI Intelligence (Slice 3 & 4)"])
 
 
 @router.post("/infer/{parent_ulpin}")
@@ -307,9 +319,117 @@ def list_models():
 
 
 @router.post("/evaluate")
-def run_evaluation_benchmark():
-    """Executes empirical evaluation harness against synthetic ground truth cadastral scenarios."""
-    return AIEvaluationHarness.run_benchmark_evaluation()
+def run_evaluation_benchmark(db: Session = Depends(get_db)):
+    """Executes empirical evaluation harness against 10 synthetic ground truth cadastral scenarios."""
+    return AIEvaluationHarness.run_benchmark_evaluation(db=db)
+
+
+@router.get("/disagreements/{parent_ulpin}", response_model=DisagreementListResponse)
+def get_validation_disagreements(
+    parent_ulpin: str,
+    actor_id: str = Query(default="surveyor_officer_01", description="Triggering actor"),
+    db: Session = Depends(get_db)
+):
+    """Analyzes and catalogs tensions/disagreements between AI proposal confidence, deterministic validation, and human review."""
+    engine = ValidationDisagreementEngine(db)
+    return engine.analyze_disagreements(parent_ulpin=parent_ulpin, actor_id=actor_id)
+
+
+@router.get("/explain/validation/{run_id}")
+def explain_validation_run(run_id: str, db: Session = Depends(get_db)):
+    """Provides deep, transparent, human-readable explanations of every validation issue and blocker in a validation run."""
+    val_run = db.query(ValidationRunModel).filter(ValidationRunModel.id == run_id).first()
+    if not val_run:
+        return {"run_id": run_id, "issues": [], "summary": "Validation run not found."}
+
+    issues = db.query(ValidationIssueModel).filter(ValidationIssueModel.run_id == val_run.id).all()
+    explanations = [
+        CadastralExplainer.explain_validation_issue({
+            "rule_code": iss.rule_code,
+            "severity": iss.severity,
+            "object_id": iss.object_id,
+            "passed": iss.passed,
+            "message": iss.message,
+            "measured_value": iss.measured_value,
+            "threshold": iss.threshold,
+            "suggested_action": iss.suggested_action
+        })
+        for iss in issues
+    ]
+
+    return {
+        "run_id": str(val_run.id),
+        "parent_ulpin": val_run.parent_ulpin,
+        "validator_version": val_run.validator_version,
+        "ruleset_version": "1.0.0",
+        "rules_evaluated": val_run.rules_evaluated,
+        "blocker_count": val_run.blocker_count,
+        "can_approve": val_run.can_approve,
+        "explanations": explanations
+    }
+
+
+@router.get("/reproducibility/{target_id}", response_model=ReproducibilitySnapshotResponse)
+def get_reproducibility_snapshot(
+    target_id: str,
+    actor_id: str = Query(default="audit_officer", description="Auditing actor"),
+    db: Session = Depends(get_db)
+):
+    """Generates or retrieves cryptographic reproducibility snapshot for candidate proposal or governed spatial unit."""
+    service = ReproducibilityService(db)
+    return service.generate_snapshot(target_id=target_id, actor_id=actor_id)
+
+
+@router.post("/reproducibility/verify")
+def verify_reproducibility(
+    request: ReproducibilityVerificationRequest,
+    db: Session = Depends(get_db)
+):
+    """Recomputes cryptographic snapshot hash from underlying database state to verify reproducibility."""
+    service = ReproducibilityService(db)
+    return service.verify_reproducibility(target_id=request.target_id)
+
+
+@router.post("/models/compare", response_model=ModelComparisonResponse)
+def compare_models(
+    request: ModelComparisonRequest,
+    db: Session = Depends(get_db)
+):
+    """Compares two model configurations or baseline on proposal count, mean confidence, anomalies, and validation blockers."""
+    service = ModelComparisonService(db)
+    return service.compare_models(
+        model_a_id=request.model_a_id,
+        model_b_id=request.model_b_id,
+        parent_ulpin=request.parent_ulpin
+    )
+
+
+@router.get("/evaluations/history")
+def get_evaluation_history(db: Session = Depends(get_db)):
+    """Retrieves historical empirical evaluation benchmark runs."""
+    runs = db.query(EvaluationRunModel).order_by(EvaluationRunModel.created_at.desc()).limit(10).all()
+    return {
+        "count": len(runs),
+        "runs": [
+            {
+                "run_id": r.run_id,
+                "scenario_name": r.scenario_name,
+                "dataset_name": r.dataset_name,
+                "dataset_version": r.dataset_version,
+                "is_synthetic": r.is_synthetic,
+                "model_name": r.model_name,
+                "model_version": r.model_version,
+                "ruleset_version": r.ruleset_version,
+                "total_cases": r.total_cases,
+                "metrics": r.metrics_json,
+                "disagreements_count": r.disagreements_count,
+                "execution_time_ms": float(r.execution_time_ms),
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None
+            }
+            for r in runs
+        ]
+    }
 
 
 @router.post("/scenarios/{scenario_key}")
@@ -371,3 +491,4 @@ def load_ai_demo_scenario(
         "anomalies_count": len(anomalies),
         "summary": summary.model_dump()
     }
+

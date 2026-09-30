@@ -312,3 +312,74 @@ class AIAnomalyModel(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
 
+# ==============================================================================
+# SLICE 4 — VALIDATION INTELLIGENCE, EXPLAINABILITY & REPRODUCIBILITY MODELS
+# ==============================================================================
+
+class ValidationDisagreementModel(Base):
+    __tablename__ = "validation_disagreements"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    disagreement_id = Column(String(64), unique=True, nullable=False, index=True)
+    parent_ulpin = Column(String(14), ForeignKey("parent_parcels.ulpin", ondelete="CASCADE"), nullable=False, index=True)
+    candidate_id = Column(String(64), nullable=True, index=True)
+    disagreement_type = Column(String(64), nullable=False, index=True)
+    severity = Column(String(16), nullable=False, index=True)
+    ai_confidence = Column(Numeric(5, 4), nullable=False)
+    validation_status = Column(String(32), nullable=False)
+    human_decision = Column(String(32), nullable=True)
+    rule_codes = Column("rule_codes", JSON, nullable=False, default=list)
+    explanation = Column(Text, nullable=False)
+    measured_values = Column("measured_values", JSON, nullable=True)
+    thresholds = Column("thresholds", JSON, nullable=True)
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    ruleset_version = Column(String(32), nullable=False, default="1.0.0")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ReproducibilitySnapshotModel(Base):
+    __tablename__ = "reproducibility_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    snapshot_id = Column(String(64), unique=True, nullable=False, index=True)
+    parent_ulpin = Column(String(14), ForeignKey("parent_parcels.ulpin", ondelete="CASCADE"), nullable=False, index=True)
+    target_type = Column(String(32), nullable=False)
+    target_id = Column(String(64), nullable=False, index=True)
+    revision_id = Column(UUID(as_uuid=True), nullable=True)
+    reproducibility_status = Column(String(32), nullable=False)
+    input_evidence_hashes = Column("input_evidence_hashes", JSON, nullable=False, default=list)
+    geometry_geojson = Column("geometry_geojson", JSON, nullable=False)
+    crs = Column(String(32), nullable=False)
+    generation_method = Column(String(64), nullable=False)
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    model_config_hash = Column(String(64), nullable=False)
+    validation_ruleset_version = Column(String(32), nullable=False, default="1.0.0")
+    software_commit = Column(String(64), nullable=False)
+    snapshot_hash = Column(String(64), nullable=False)
+    metadata_json = Column("metadata", JSON, nullable=False, default=dict)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class EvaluationRunModel(Base):
+    __tablename__ = "evaluation_runs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id = Column(String(64), unique=True, nullable=False, index=True)
+    scenario_name = Column(String(64), nullable=False)
+    dataset_name = Column(String(64), nullable=False)
+    dataset_version = Column(String(32), nullable=False)
+    is_synthetic = Column(Boolean, nullable=False, default=True)
+    model_name = Column(String(128), nullable=False)
+    model_version = Column(String(32), nullable=False)
+    ruleset_version = Column(String(32), nullable=False, default="1.0.0")
+    total_cases = Column(Integer, nullable=False)
+    metrics_json = Column("metrics", JSON, nullable=False, default=dict)
+    disagreements_count = Column(Integer, nullable=False, default=0)
+    execution_time_ms = Column(Numeric(10, 2), nullable=False)
+    status = Column(String(32), nullable=False, default="COMPLETED")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+

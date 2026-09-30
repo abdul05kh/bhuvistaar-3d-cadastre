@@ -281,5 +281,48 @@ export const api = {
     });
     return handleResponse<any>(res);
   },
+
+  // ==============================================================================
+  // SLICE 4 — VALIDATION INTELLIGENCE, EXPLAINABILITY & REPRODUCIBILITY METHODS
+  // ==============================================================================
+
+  async getValidationDisagreements(ulpin: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/disagreements/${ulpin}`);
+    return handleResponse<any>(res);
+  },
+
+  async explainValidationRun(runId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/explain/validation/${runId}`);
+    return handleResponse<any>(res);
+  },
+
+  async getReproducibilitySnapshot(targetId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/reproducibility/${targetId}`);
+    return handleResponse<any>(res);
+  },
+
+  async verifyReproducibility(targetId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/reproducibility/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_id: targetId, recompute_hash: true }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async compareModels(modelAId: string, modelBId: string, ulpin: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/models/compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model_a_id: modelAId, model_b_id: modelBId, parent_ulpin: ulpin }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async getEvaluationHistory(): Promise<any> {
+    const res = await fetch(`${API_BASE}/ai/evaluations/history`);
+    return handleResponse<any>(res);
+  },
 };
+
 

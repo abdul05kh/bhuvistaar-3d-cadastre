@@ -11,6 +11,8 @@ class ValidationIssueResponse(BaseModel):
     id: str
     run_id: str
     rule_code: str
+    rule_version: str = "1.0.0"
+    ruleset_version: str = "1.0.0"
     severity: str
     object_type: str
     object_id: str
@@ -26,6 +28,8 @@ class ValidationSummaryResponse(BaseModel):
     run_id: str
     ulpin: str
     timestamp: datetime
+    validator_version: str = "1.0.0"
+    ruleset_version: str = "1.0.0"
     rules_evaluated: int
     passed_rules: int
     failed_rules: int
@@ -34,3 +38,4 @@ class ValidationSummaryResponse(BaseModel):
     warning_count: int
     can_approve: bool
     issues: list[ValidationIssueResponse]
+

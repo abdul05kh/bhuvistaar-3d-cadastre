@@ -10,7 +10,8 @@ import {
   AICandidate,
   AIAnomaly,
   AIAssistanceSummary,
-  ReviewerQueueItem
+  ReviewerQueueItem,
+  DisagreementRecord
 } from './types';
 import { api } from './api/client';
 import { AppHeader } from './components/layout/AppHeader';
@@ -36,6 +37,13 @@ import { AcceptCandidateModal } from './components/ai/AcceptCandidateModal';
 import { RejectCandidateModal } from './components/ai/RejectCandidateModal';
 import { ExplainModal } from './components/ai/ExplainModal';
 
+// Slice 4 Validation Intelligence & Reproducibility Components
+import { DisagreementTracker } from './components/ai/DisagreementTracker';
+import { ReproducibilityModal } from './components/ai/ReproducibilityModal';
+import { ValidationExplanationModal } from './components/ai/ValidationExplanationModal';
+import { ModelComparisonModal } from './components/ai/ModelComparisonModal';
+import { SideBySideEvidenceViewer } from './components/ai/SideBySideEvidenceViewer';
+
 import {
   AlertTriangle,
   FileText,
@@ -46,13 +54,18 @@ import {
   Brain,
   ShieldAlert,
   ListOrdered,
-  Sparkles
+  Sparkles,
+  ArrowRightLeft,
+  Columns,
+  Hash
 } from 'lucide-react';
 
 const DEFAULT_ULPIN = '12345678901234';
 
 type BottomTab =
   | 'validation'
+  | 'disagreements'
+  | 'triad-view'
   | 'ai-candidates'
   | 'anomalies'
   | 'queue'
@@ -82,6 +95,14 @@ export const App: React.FC = () => {
   const [aiSummary, setAiSummary] = useState<AIAssistanceSummary | null>(null);
   const [reviewerQueue, setReviewerQueue] = useState<ReviewerQueueItem[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+
+  // Slice 4 Disagreement & Reproducibility State
+  const [disagreements, setDisagreements] = useState<DisagreementRecord[]>([]);
+  const [isReproducibilityModalOpen, setIsReproducibilityModalOpen] = useState(false);
+  const [reproducibilityTargetId, setReproducibilityTargetId] = useState<string>(DEFAULT_ULPIN);
+  const [isValidationExplainModalOpen, setIsValidationExplainModalOpen] = useState(false);
+  const [explainRunId, setExplainRunId] = useState<string>('');
+  const [isModelComparisonModalOpen, setIsModelComparisonModalOpen] = useState(false);
 
   // Modals & Dialogs
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
@@ -116,7 +137,8 @@ export const App: React.FC = () => {
         candidatesData,
         anomaliesData,
         summaryData,
-        queueData
+        queueData,
+        disagreementsData
       ] = await Promise.all([
         api.getParcel(ulpin),
         api.getParcelUnits(ulpin),
@@ -127,6 +149,7 @@ export const App: React.FC = () => {
         api.getAiAnomalies(ulpin).catch(() => ({ anomalies: [] })),
         api.getAiSummary(ulpin).catch(() => null),
         api.getReviewerQueue(ulpin).catch(() => ({ items: [] })),
+        api.getValidationDisagreements(ulpin).catch(() => ({ disagreements: [] })),
       ]);
 
       setParcel(parcelData);
@@ -139,6 +162,7 @@ export const App: React.FC = () => {
       setAiAnomalies(anomaliesData.anomalies || []);
       setAiSummary(summaryData);
       setReviewerQueue(queueData.items || []);
+      setDisagreements(disagreementsData.disagreements || []);
 
       if (candidatesData.candidates && candidatesData.candidates.length > 0 && !selectedCandidateId) {
         setSelectedCandidateId(candidatesData.candidates[0].candidate_id);
@@ -438,6 +462,7 @@ export const App: React.FC = () => {
         blockerCount={blockerCount}
         candidateCount={aiCandidates.length}
         anomalyCount={aiAnomalies.length}
+        disagreementCount={disagreements.length}
         onResetDemo={handleResetDemo}
         onToggleDemoGuide={() => setIsDemoGuideOpen(!isDemoGuideOpen)}
         onOpenTraceOrigin={() => {
@@ -445,6 +470,7 @@ export const App: React.FC = () => {
           setIsTraceOriginOpen(true);
         }}
         onOpenModelCards={() => setIsModelModalOpen(true)}
+        onOpenCompareModels={() => setIsModelComparisonModalOpen(true)}
         isDemoGuideOpen={isDemoGuideOpen}
         isLoading={isLoading}
       />
@@ -551,6 +577,24 @@ export const App: React.FC = () => {
               >
                 <AlertTriangle size={12} />
                 Validation ({blockerCount} Blockers)
+              </button>
+
+              <button
+                className={`btn btn-sm ${activeTab === 'disagreements' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('disagreements')}
+              >
+                <ShieldAlert size={12} className={disagreements.some(d => d.severity === 'BLOCKER') ? 'text-red-400' : 'text-slate-400'} />
+                Disagreements ({disagreements.length})
+              </button>
+
+              <button
+                className={`btn btn-sm ${activeTab === 'triad-view' ? 'btn-primary' : ''}`}
+                style={{ borderRadius: '4px 4px 0 0', borderBottom: 'none' }}
+                onClick={() => setActiveTab('triad-view')}
+              >
+                <Columns size={12} />
+                Side-by-Side Triad
               </button>
 
               <button
@@ -682,6 +726,31 @@ export const App: React.FC = () => {
                 />
               )}
 
+              {activeTab === 'disagreements' && (
+                <DisagreementTracker
+                  disagreements={disagreements}
+                  onSelectCandidate={(candId) => {
+                    setSelectedCandidateId(candId);
+                    const match = units.find((u) => u.level_code === aiCandidates.find((c) => c.candidate_id === candId)?.level_code);
+                    if (match) setSelectedUnitId(match.id);
+                  }}
+                  onExplainCandidate={(candId) => setCandidateToExplain(candId)}
+                />
+              )}
+
+              {activeTab === 'triad-view' && (
+                <SideBySideEvidenceViewer
+                  candidate={aiCandidates.find((c) => c.candidate_id === selectedCandidateId) || aiCandidates[0] || null}
+                  evidenceList={evidenceList}
+                  validationSummary={validationSummary}
+                  onExplainCandidate={(candId) => setCandidateToExplain(candId)}
+                  onOpenReproducibility={(candId) => {
+                    setReproducibilityTargetId(candId);
+                    setIsReproducibilityModalOpen(true);
+                  }}
+                />
+              )}
+
               {activeTab === 'evidence' && <EvidencePanel evidenceList={evidenceList} />}
 
               {activeTab === 'review' && (
@@ -734,6 +803,14 @@ export const App: React.FC = () => {
             setActiveTab('export');
             handleRefreshExport();
           }}
+          onOpenReproducibility={(targetId) => {
+            setReproducibilityTargetId(targetId);
+            setIsReproducibilityModalOpen(true);
+          }}
+          onExplainValidation={() => {
+            setExplainRunId(validationSummary?.run_id || '');
+            setIsValidationExplainModalOpen(true);
+          }}
           isConflicting={hasOverlapDefect && selectedUnit?.level_code === 'L01'}
         />
       </div>
@@ -784,6 +861,30 @@ export const App: React.FC = () => {
         isOpen={Boolean(candidateToExplain)}
         onClose={() => setCandidateToExplain(null)}
       />
+
+      {/* Slice 4: Reproducibility Snapshot Modal */}
+      {isReproducibilityModalOpen && (
+        <ReproducibilityModal
+          targetId={reproducibilityTargetId}
+          onClose={() => setIsReproducibilityModalOpen(false)}
+        />
+      )}
+
+      {/* Slice 4: Validation Explanation Modal */}
+      {isValidationExplainModalOpen && (
+        <ValidationExplanationModal
+          runId={explainRunId || validationSummary?.run_id || ''}
+          onClose={() => setIsValidationExplainModalOpen(false)}
+        />
+      )}
+
+      {/* Slice 4: Model Comparison Modal */}
+      {isModelComparisonModalOpen && (
+        <ModelComparisonModal
+          parentUlpin={DEFAULT_ULPIN}
+          onClose={() => setIsModelComparisonModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -10,6 +10,8 @@ class BaseValidationRule(ABC):
     rule_code: str
     rule_family: str
     description: str
+    rule_version: str = "1.0.0"
+    ruleset_version: str = "1.0.0"
 
     @abstractmethod
     def evaluate(

@@ -383,3 +383,97 @@ export interface ModelCard {
   disclaimer: string;
 }
 
+// Slice 4 Validation Intelligence & Reproducibility Types
+export interface DisagreementRecord {
+  disagreement_id: string;
+  parent_ulpin: string;
+  candidate_id?: string | null;
+  level_code?: string | null;
+  disagreement_type: string;
+  severity: string;
+  ai_confidence: number;
+  validation_status: string;
+  human_decision?: string | null;
+  rule_codes: string[];
+  explanation: string;
+  measured_values?: Record<string, any> | null;
+  thresholds?: Record<string, any> | null;
+  model: { name: string; version: string };
+  ruleset_version: string;
+  created_at?: string | null;
+}
+
+export interface DisagreementListResponse {
+  parent_ulpin: string;
+  total_disagreements: number;
+  blocker_count: number;
+  warning_count: number;
+  consistent_count: number;
+  disagreements: DisagreementRecord[];
+}
+
+export interface ReproducibilitySnapshot {
+  snapshot_id: string;
+  parent_ulpin: string;
+  target_type: string;
+  target_id: string;
+  revision_id?: string | null;
+  reproducibility_status: 'REPRODUCIBLE' | 'PARTIALLY_REPRODUCIBLE' | 'NOT_REPRODUCIBLE';
+  input_evidence_hashes: string[];
+  geometry_geojson: Record<string, any>;
+  crs: string;
+  generation_method: string;
+  model: { name: string; version: string };
+  model_config_hash: string;
+  validation_ruleset_version: string;
+  software_commit: string;
+  snapshot_hash: string;
+  can_reproduce: boolean;
+  verification_report: Record<string, any>;
+  created_at?: string | null;
+}
+
+export interface ModelComparisonMetric {
+  metric_name: string;
+  model_a_value: any;
+  model_b_value: any;
+  delta: any;
+  observation: string;
+}
+
+export interface ModelComparisonResponse {
+  parent_ulpin: string;
+  model_a: Record<string, any>;
+  model_b: Record<string, any>;
+  metrics: ModelComparisonMetric[];
+  summary_notes: string;
+  limitations_disclaimer: string;
+}
+
+export interface ValidationExplanationItem {
+  rule_code: string;
+  rule_family: string;
+  rule_version: string;
+  ruleset_version: string;
+  severity: string;
+  lower_unit?: string;
+  upper_unit?: string;
+  measured_values?: Record<string, any>;
+  thresholds?: Record<string, any>;
+  detailed_explanation: string;
+  suggested_action: string;
+  governance_implication: string;
+}
+
+export interface ValidationExplanationResponse {
+  run_id: string;
+  parent_ulpin: string;
+  validator_version: string;
+  ruleset_version: string;
+  rules_evaluated: number;
+  blocker_count: number;
+  can_approve: boolean;
+  explanations: ValidationExplanationItem[];
+}
+
+

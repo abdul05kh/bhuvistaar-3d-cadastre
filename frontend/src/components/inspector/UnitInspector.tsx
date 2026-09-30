@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Shield, Edit3, History, Download, AlertTriangle } from 'lucide-react';
+import { Box, Shield, Edit3, History, Download, AlertTriangle, Hash, HelpCircle } from 'lucide-react';
 import { SpatialUnit } from '../../types';
 
 interface UnitInspectorProps {
@@ -7,6 +7,8 @@ interface UnitInspectorProps {
   onRequestCorrection: (unit: SpatialUnit) => void;
   onViewRevisions: (unit: SpatialUnit) => void;
   onExport: (revisionId: string) => void;
+  onOpenReproducibility?: (targetId: string) => void;
+  onExplainValidation?: () => void;
   isConflicting: boolean;
 }
 
@@ -15,6 +17,8 @@ export const UnitInspector: React.FC<UnitInspectorProps> = ({
   onRequestCorrection,
   onViewRevisions,
   onExport,
+  onOpenReproducibility,
+  onExplainValidation,
   isConflicting,
 }) => {
   if (!unit) {
@@ -187,6 +191,31 @@ export const UnitInspector: React.FC<UnitInspectorProps> = ({
               <Download size={13} />
               Export JSON
             </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {onOpenReproducibility && (
+              <button
+                className="btn btn-sm"
+                style={{ fontSize: '0.7rem' }}
+                onClick={() => onOpenReproducibility(unit.prototype_vuid)}
+                title="View cryptographic reproducibility snapshot"
+              >
+                <Hash size={12} />
+                Snapshot
+              </button>
+            )}
+            {onExplainValidation && (
+              <button
+                className="btn btn-sm"
+                style={{ fontSize: '0.7rem' }}
+                onClick={onExplainValidation}
+                title="Explain validation rule outcomes"
+              >
+                <HelpCircle size={12} />
+                Validation
+              </button>
+            )}
           </div>
         </div>
       </div>
