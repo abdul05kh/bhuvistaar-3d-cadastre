@@ -50,6 +50,10 @@ import { InteroperabilityExportModal } from './components/export/Interoperabilit
 import { FieldOperatorView } from './components/field/FieldOperatorView';
 import { OperationalRole } from './types';
 
+// Slice 6 Judge Experience Modals
+import { JudgeExplanationModal } from './components/system/JudgeExplanationModal';
+import { SystemOverviewModal } from './components/system/SystemOverviewModal';
+
 import {
   AlertTriangle,
   FileText,
@@ -124,6 +128,8 @@ export const App: React.FC = () => {
   // Modals & Dialogs
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(true);
+  const [isJudgeFAQOpen, setIsJudgeFAQOpen] = useState(false);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [demoStep, setDemoStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -545,6 +551,8 @@ export const App: React.FC = () => {
           onPrevStep={handlePrevDemoStep}
           onResetDemo={handleResetDemo}
           onSelectScenario={handleSelectScenario}
+          onOpenJudgeFAQ={() => setIsJudgeFAQOpen(true)}
+          onOpenOverview={() => setIsOverviewOpen(true)}
           isLoading={isLoading}
         />
       )}
@@ -984,6 +992,25 @@ export const App: React.FC = () => {
         exportData={exportData}
         ulpin={parcel?.ulpin || DEFAULT_ULPIN}
         revisionId={selectedUnit?.active_revision_id || ''}
+      />
+
+      {/* Slice 6: Judge Technical FAQ Modal */}
+      <JudgeExplanationModal
+        isOpen={isJudgeFAQOpen}
+        onClose={() => setIsJudgeFAQOpen(false)}
+      />
+
+      {/* Slice 6: 30-Second System Overview Modal */}
+      <SystemOverviewModal
+        isOpen={isOverviewOpen}
+        onClose={() => setIsOverviewOpen(false)}
+        parcel={parcel}
+        units={units}
+        validationSummary={validationSummary}
+        onStartGoldenDemo={() => {
+          setDemoStep(1);
+          setIsDemoGuideOpen(true);
+        }}
       />
     </div>
   );

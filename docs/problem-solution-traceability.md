@@ -1,0 +1,21 @@
+# BhuVistaar — SIH26011 Problem $\to$ Solution Traceability
+
+**Problem Statement ID:** `SIH26011`  
+**Ministry / Organization:** Ministry of Rural Development / Department of Land Resources (DoLR)  
+**Theme:** Smart Land Administration & 3D Cadastral Intelligence
+
+---
+
+## Traceability Matrix
+
+| SIH26011 Problem Requirement | Cadastral Challenge in Real World | BhuVistaar Technical Solution | Repository Implementation | Verification Method & Demo |
+|---|---|---|---|---|
+| **1. Disambiguation of Vertical Rights** | 2D parcels collapse apartments, basements, and elevated commercial spaces into a single footprint, leading to boundary disputes. | Explicit 3D volumetric spatial units with metric elevation bounds $[z_{\text{min}}, z_{\text{max}}]$ tied to projected UTM ground coordinates. | `backend/domain/spatial_unit.py`, `backend/geometry/extrusion.py` | 3D WebGL viewer visualizes four distinct floor prisms (B01, G00, L01, L02) over the same 2D footprint. |
+| **2. Preservation of Parent Cadastre** | 3D models often exist as detached CAD files disconnected from the statutory land registry. | The official 14-digit ULPIN is enforced as the immutable parent foreign key for all derived units. | `parent_parcels` table, `backend/services/parcel_service.py` | Parent ULPIN `12345678901234` is locked; child units cannot exist without it. |
+| **3. Representation-Invariant Unique Identity** | Changing CAD drawing vertex start points or ring winding produces different geometry hashes, causing duplicate unit IDs. | Deterministic Prototype VUID algorithm that sorts polygon rings, normalizes vertex order, and hashes canonical WKB. | `backend/vuid/generator.py`, `backend/geometry/normalization.py` | `test_canonical_normalization.py` proves reversed rings yield the exact same VUID. |
+| **4. Strict Spatial & Topological Validation** | Unregulated 3D models can introduce overlapping ownership boundaries or encroach into neighboring parcels. | Deterministic Gate A validation rules: GEO (validity), TOP (boundary containment without auto-clipping), and VRT (vertical overlap blocker). | `backend/validation/rules/`, `test_vrt_003_contract.py` | Flagship scenario detects exact 0.50m collision between L01 and L02, emitting an immovable BLOCKER. |
+| **5. AI Assistance without Autonomous Authority** | Fully manual 3D drafting is too slow; black-box generative AI hallucinates and cannot be legally trusted. | AI models propose non-authoritative candidates; deterministic spatial rules validate geometry; human officers govern approval. | `backend/ai/services/`, `backend/services/approval_service.py` | Disagreement Engine Case A flags high-confidence invalid proposals; autonomous AI approval is strictly blocked. |
+| **6. Non-Destructive Dispute & Correction Lineage** | Overwriting cadastre during corrections destroys the audit trail needed for legal evidence in land courts. | Non-destructive revisioning model: corrections spawn Revision 2, link predecessor IDs, and preserve Revision 1 intact. | `spatial_unit_revisions` table, `CorrectionService.apply_correction()` | Revision comparison diff table shows side-by-side elevation delta (106.50m $\to$ 106.00m) while keeping Rev 1. |
+| **7. Tamper-Evident Historical Auditability** | Cadastral corruption often occurs through unlogged administrative modifications. | Append-only audit trail logging every action, actor, timestamp, correlation ID, and state transition. | `audit_events` table, `AuditService.log_event()` | Audit timeline in UI and API shows sequential events from INGESTION to APPROVAL. |
+| **8. Open Interoperability & Data Exchange** | Proprietary CAD formats lock land records into siloed software ecosystems. | Prototype JSON v1.0.0, 2D GeoJSON FeatureCollections, and 3D Wavefront OBJ exports with round-trip verification. | `backend/services/interoperability_service.py` | One-click export modal with automated round-trip re-import verification test. |
+| **9. Field Robustness & Degraded Operation** | Surveyors work in areas with poor network connectivity or conflicting architectural plans. | Controlled field simulation engine testing delayed uploads, duplicate evidence, and offline degraded mode. | `backend/services/field_simulation_service.py`, `FieldOperatorView.tsx` | 11 field scenarios demonstrate recovery from failure without duplicate record creation. |

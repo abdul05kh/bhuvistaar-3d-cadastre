@@ -530,31 +530,52 @@ export const Cadastral3DViewer: React.FC<Cadastral3DViewerProps> = ({
         </div>
       )}
 
-      {/* Metric Height Legend */}
+      {/* Multi-Layer Cadastral & Height Legend */}
       <div
         style={{
           position: 'absolute',
           top: '12px',
           right: '14px',
-          backgroundColor: 'rgba(14, 23, 38, 0.85)',
-          padding: '6px 12px',
-          borderRadius: '6px',
-          border: '1px solid var(--border-subtle)',
+          backgroundColor: 'rgba(10, 18, 30, 0.9)',
+          padding: '8px 14px',
+          borderRadius: '8px',
+          border: '1px solid #1e3a5f',
           fontSize: '11px',
           color: 'var(--text-secondary)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '3px',
+          gap: '8px',
           zIndex: 10,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
         }}
       >
-        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Vertical Bounds</span>
-        <span>L02: 106.00m - 109.00m</span>
-        <span style={{ color: hasOverlapDefect ? 'var(--color-blocker)' : 'inherit' }}>
-          L01: 103.00m - {hasOverlapDefect ? '106.50m' : '106.00m'}
-        </span>
-        <span>G00: 100.00m - 103.00m</span>
-        <span>B01: 97.00m - 100.00m</span>
+        <div>
+          <span style={{ fontWeight: 700, color: '#f8fafc', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            3D Semantic Layers
+          </span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '3px', marginTop: '4px', fontSize: '10px' }}>
+            <span style={{ color: '#38bdf8' }}>⬚ PARCEL: 2D Ground Boundary</span>
+            <span style={{ color: '#60a5fa' }}>🏢 GOVERNED UNIT: Extruded Prism</span>
+            <span style={{ color: '#c084fc' }}>🤖 AI CANDIDATE: Advisory Proposal</span>
+            <span style={{ color: '#f87171', fontWeight: 600 }}>⚠️ BLOCKER: VRT-003 Overlap</span>
+            <span style={{ color: '#94a3b8' }}>✕ REJECTED: Inactive / Historical</span>
+            <span style={{ color: '#fbbf24', fontWeight: 600 }}>★ SELECTED: Active Inspector</span>
+          </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid #1e293b', paddingTop: '6px' }}>
+          <span style={{ fontWeight: 700, color: '#f8fafc', fontSize: '10px', textTransform: 'uppercase' }}>
+            Elevation Bounds (MSL)
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '3px', fontSize: '10px', fontFamily: 'monospace' }}>
+            <span>L02: 106.00m - 109.00m</span>
+            <span style={{ color: hasOverlapDefect ? '#f87171' : 'inherit', fontWeight: hasOverlapDefect ? 700 : 400 }}>
+              L01: 103.00m - {hasOverlapDefect ? '106.50m (!)' : '106.00m'}
+            </span>
+            <span>G00: 100.00m - 103.00m</span>
+            <span>B01:  97.00m - 100.00m</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -100,6 +100,20 @@ class ApprovalService:
         return is_eligible, reasons
 
     def approve_revision(self, revision_id: UUID, request: ApprovalSubmitRequest) -> ApprovalDecision:
+        # Guard 1: Autonomous AI cannot approve
+        if request.actor_context in ("AI_AUTONOMOUS", "AI_AGENT", "AI_MODEL"):
+            raise ApprovalBlockedError(
+                "AI IS NOT THE AUTHORITY: Autonomous AI cannot grant Gate C approval. Human officer adjudication is mandatory.",
+                details={"actor_context": request.actor_context}
+            )
+
+        # Guard 2: Role-based authorization boundary
+        if request.role and request.role.upper() in ("VIEWER", "FIELD_OPERATOR"):
+            raise ApprovalBlockedError(
+                f"Unauthorized role: Role '{request.role.upper()}' is not permitted to grant Gate C approval. Approval requires APPROVER or ADMIN role.",
+                details={"role": request.role}
+            )
+
         is_eligible, blockers = self.evaluate_gate_c_eligibility(revision_id)
         if not is_eligible:
             raise ApprovalBlockedError(

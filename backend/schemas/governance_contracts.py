@@ -48,6 +48,7 @@ class ApprovalSubmitRequest(BaseModel):
     approver_id: str = Field(default="OFFICER-001", description="Approving officer identifier")
     reason: str = Field(..., min_length=3, description="Approval justification and compliance determination")
     actor_context: str = Field(default="SIMULATED_PROTOTYPE", description="Simulated prototype actor context")
+    role: Optional[str] = Field(None, description="Operational role of actor (e.g. APPROVER, ADMIN, VIEWER, REVIEWER)")
 
 
 class ApprovalDecisionResponse(BaseModel):

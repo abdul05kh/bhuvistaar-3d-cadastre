@@ -1,0 +1,79 @@
+{
+  "project": "BhuVistaar",
+  "full_name": "BhuVistaar — 3D Cadastral Intelligence & Validation Platform",
+  "problem_statement_id": "SIH26011",
+  "organization": "Ministry of Rural Development / Department of Land Resources (DoLR)",
+  "team": "Team VoidBreakers",
+  "release_version": "1.0.0-rc1",
+  "release_status": "RELEASE_CANDIDATE",
+  "branch": "main",
+  "base_commit": "5ea845364f5bbe5cda5bc2a6d03ae420e5dbc9e8",
+  "database": {
+    "engine": "PostgreSQL 16",
+    "spatial_extension": "PostGIS 3.4",
+    "migration_head": "004_validation_intelligence",
+    "canonical_storage_srid": 32643,
+    "crs_name": "WGS 84 / UTM Zone 43N"
+  },
+  "subsystem_versions": {
+    "backend_api": "1.0.0",
+    "frontend_client": "1.0.0",
+    "validation_ruleset": "v1.0.0",
+    "candidate_model": "prismatic-candidate-001",
+    "anomaly_model": "cadastral-anomaly-001",
+    "demo_dataset": "BHUVISTAAR_DEMO_V1",
+    "interoperability_schema": "BhuVistaar JSON v1.0.0"
+  },
+  "verification_summary": {
+    "backend_pytest_tests_passed": 79,
+    "backend_pytest_tests_failed": 0,
+    "backend_pytest_pass_rate": "100%",
+    "browser_e2e_playwright": "PASSED",
+    "frontend_production_build": "SUCCESS (728ms)",
+    "data_integrity_status": "PASS",
+    "export_roundtrip_verification": "MATCH"
+  },
+  "disclaimers": {
+    "prototype_vuid": "Prototype VUID — not an official 3D ULPIN.",
+    "synthetic_data": "All demonstration fixtures represent SYNTHETIC PROTOTYPE DATA.",
+    "non_statutory": "BhuVistaar deterministically validates geometric consistency; it does NOT adjudicate land title, determine ownership, or replace statutory survey authorities."
+  },
+  "authors": [
+    {
+      "name": "Mohammad Abdul Kalam Hussain",
+      "github": "@abdul05kh",
+      "email": "abdul05kh.college@gmail.com",
+      "role": "Team Lead / ML Engineer"
+    },
+    {
+      "name": "Siri Chandana",
+      "github": "@kotagirisirichandana",
+      "email": "kotagirisirichandana73@gmail.com",
+      "role": "Remote Sensing / GIS Specialist"
+    },
+    {
+      "name": "Mohammad Zakiruddin",
+      "github": "@zakirverse",
+      "email": "zakirmd.1805@gmail.com",
+      "role": "Frontend Developer"
+    },
+    {
+      "name": "Mohammed Numan",
+      "github": "@mohammednumaan716",
+      "email": "mohammednumaan901@gmail.com",
+      "role": "AI Engineer"
+    },
+    {
+      "name": "Manivarun Chintala",
+      "github": "@manivarun-05",
+      "email": "manivarunchintala2005.2728@gmail.com",
+      "role": "Data Infrastructure / Backend Developer"
+    },
+    {
+      "name": "Thaniska",
+      "github": "@thanishkaX",
+      "email": "ramatenkithanishka@gmail.com",
+      "role": "QA & Verification Lead"
+    }
+  ]
+}
