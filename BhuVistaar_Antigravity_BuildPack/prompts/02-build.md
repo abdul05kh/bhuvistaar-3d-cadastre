@@ -1,0 +1,1 @@
+Implement the approved BhuVistaar plan in small vertical slices. After each slice run relevant tests, fix root causes, and update contracts/docs when necessary. Never use fake screenshots as the app, never fabricate spatial accuracy, and never let ML override deterministic validation.

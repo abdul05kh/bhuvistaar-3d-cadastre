@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpatialUnit3D",
+  "type": "object",
+  "required": [
+    "prototype_vuid",
+    "parent_ulpin",
+    "semantic_type",
+    "level_code",
+    "z_min",
+    "z_max",
+    "confidence",
+    "source_ids"
+  ],
+  "properties": {
+    "prototype_vuid": {
+      "type": "string"
+    },
+    "parent_ulpin": {
+      "type": "string"
+    },
+    "semantic_type": {
+      "type": "string"
+    },
+    "level_code": {
+      "type": "string"
+    },
+    "z_min": {
+      "type": "number"
+    },
+    "z_max": {
+      "type": "number"
+    },
+    "confidence": {
+      "enum": [
+        "VERIFIED",
+        "STRONG",
+        "MODERATE",
+        "WEAK",
+        "UNKNOWN"
+      ]
+    },
+    "source_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

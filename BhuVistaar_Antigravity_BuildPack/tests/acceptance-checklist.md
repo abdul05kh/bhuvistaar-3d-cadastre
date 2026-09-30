@@ -1,0 +1,15 @@
+# Release Checklist
+- [ ] clean startup
+- [ ] migration
+- [ ] fixture load
+- [ ] 4+ units generated
+- [ ] deterministic VUID
+- [ ] ULPIN preserved
+- [ ] provenance visible
+- [ ] deliberate overlap detected
+- [ ] clean fixture passes
+- [ ] BLOCKER blocks approval
+- [ ] approval creates audit event
+- [ ] export reproducible
+- [ ] prototype disclaimer visible
+- [ ] no official logo/certification claim
