@@ -1,11 +1,11 @@
 """
 Slice 5 Operational, Interoperability, and Reliability Unit Tests.
-Co-authored-by: Abdul Khader <abdulkhader.work@gmail.com>
-Co-authored-by: S S Shriram <ssshriram06@gmail.com>
-Co-authored-by: Varun H <varunh.contact@gmail.com>
-Co-authored-by: Rohan G <rohan.g.contact@gmail.com>
-Co-authored-by: Rithvik Shenoy <rithvikshenoy@gmail.com>
-Co-authored-by: Samarth H Naik <samarthhnaik@gmail.com>
+Co-authored-by: Mohammad Abdul Kalam Hussain <abdul05kh.college@gmail.com>
+Co-authored-by: Siri Chandana <kotagirisirichandana73@gmail.com>
+Co-authored-by: Mohammad Zakiruddin <zakirmd.1805@gmail.com>
+Co-authored-by: Mohammed Numan <mohammednumaan901@gmail.com>
+Co-authored-by: Manivarun Chintala <manivarunchintala2005.2728@gmail.com>
+Co-authored-by: Thaniska <ramatenkithanishka@gmail.com>
 """
 
 import pytest
