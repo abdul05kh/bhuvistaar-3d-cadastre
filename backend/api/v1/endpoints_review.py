@@ -10,10 +10,11 @@ router = APIRouter(tags=["Human Review"])
 
 
 @router.post("/units/{vuid}/revisions/{revision_id}/review", response_model=ReviewDecisionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/governance/review/{revision_id}", response_model=ReviewDecisionResponse, status_code=status.HTTP_201_CREATED)
 def submit_review(
-    vuid: str,
     revision_id: UUID,
     request: ReviewSubmitRequest,
+    vuid: str = "",
     db: Session = Depends(get_db)
 ):
     service = ReviewService(db)
@@ -36,9 +37,10 @@ def submit_review(
 
 
 @router.get("/units/{vuid}/revisions/{revision_id}/review", response_model=ReviewDecisionResponse)
+@router.get("/governance/review/{revision_id}", response_model=ReviewDecisionResponse)
 def get_review(
-    vuid: str,
     revision_id: UUID,
+    vuid: str = "",
     db: Session = Depends(get_db)
 ):
     service = ReviewService(db)

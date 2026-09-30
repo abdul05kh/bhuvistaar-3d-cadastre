@@ -10,10 +10,11 @@ router = APIRouter(tags=["Correction Workflow"])
 
 
 @router.post("/units/{vuid}/revisions/{revision_id}/correct", response_model=CorrectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/governance/correction/{revision_id}", response_model=CorrectionResponse, status_code=status.HTTP_201_CREATED)
 def apply_correction(
-    vuid: str,
     revision_id: UUID,
     request: CorrectionSubmitRequest,
+    vuid: str = "",
     db: Session = Depends(get_db)
 ):
     service = CorrectionService(db)

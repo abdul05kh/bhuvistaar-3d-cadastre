@@ -31,10 +31,11 @@ def check_approval_eligibility(
 
 
 @router.post("/units/{vuid}/revisions/{revision_id}/approve", response_model=ApprovalDecisionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/governance/approval/{revision_id}", response_model=ApprovalDecisionResponse, status_code=status.HTTP_201_CREATED)
 def approve_revision(
-    vuid: str,
     revision_id: UUID,
     request: ApprovalSubmitRequest,
+    vuid: str = "",
     db: Session = Depends(get_db)
 ):
     service = ApprovalService(db)
@@ -58,10 +59,11 @@ def approve_revision(
 
 
 @router.post("/units/{vuid}/revisions/{revision_id}/reject", response_model=RejectionResponse)
+@router.post("/governance/rejection/{revision_id}", response_model=RejectionResponse)
 def reject_revision(
-    vuid: str,
     revision_id: UUID,
     request: RejectionSubmitRequest,
+    vuid: str = "",
     db: Session = Depends(get_db)
 ):
     service = ApprovalService(db)

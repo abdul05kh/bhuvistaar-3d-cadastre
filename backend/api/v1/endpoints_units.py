@@ -16,7 +16,38 @@ def get_spatial_unit(vuid: str, db: Session = Depends(get_db)):
     repo = SpatialUnitRepository(db)
     u = repo.find_by_vuid(vuid)
     if not u:
-        raise UnitNotFoundError(vuid)
+        from backend.db.models import SpatialUnitRevisionModel
+        from geoalchemy2.shape import to_shape
+        rev_match = db.query(SpatialUnitRevisionModel).filter_by(prototype_vuid=vuid).first()
+        if not rev_match:
+            raise UnitNotFoundError(vuid)
+        
+        footprint_poly = to_shape(rev_match.footprint_geom)
+        geom_dict = mapping(footprint_poly)
+        return SpatialUnitResponse(
+            id=str(rev_match.unit_id),
+            prototype_vuid=rev_match.prototype_vuid,
+            parent_ulpin=rev_match.parent_ulpin,
+            semantic_type=rev_match.semantic_type,
+            level_code=rev_match.level_code,
+            z_min=rev_match.z_min,
+            z_max=rev_match.z_max,
+            height_m=round(rev_match.z_max - rev_match.z_min, 3),
+            footprint_area_sqm=rev_match.footprint_area_sqm,
+            volume_cbm=rev_match.volume_cbm,
+            centroid_x=rev_match.centroid_x,
+            centroid_y=rev_match.centroid_y,
+            centroid_z=rev_match.centroid_z,
+            confidence="VERIFIED",
+            generation_method="PRISMATIC_EXTRUSION",
+            vuid_algorithm_version="v1",
+            vuid_full_hash=rev_match.vuid_full_hash,
+            source_ids=[],
+            status=rev_match.status,
+            footprint_geom=GeoJSONPolygon(type="Polygon", coordinates=geom_dict["coordinates"]),
+            polyhedron_wkt=rev_match.polyhedron_wkt,
+            created_at=rev_match.created_at
+        )
 
     geom_dict = mapping(u.footprint_geom)
     return SpatialUnitResponse(
