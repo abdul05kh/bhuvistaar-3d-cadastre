@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     # Database Settings
     DATABASE_URL: str = Field(
-        default="postgresql+psycopg://postgres:postgres@localhost:5432/bhuvistaar_cadastre",
+        default="postgresql+psycopg://postgres:postgrespassword@127.0.0.1:5432/bhuvistaar_cadastre",
         description="Authoritative PostGIS connection string"
     )
     
