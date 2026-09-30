@@ -107,10 +107,15 @@ def test_browser_golden_workflow_e2e(live_servers):
         browser = p.chromium.launch(channel="msedge", headless=True)
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
+        page.on("console", lambda msg: print(f"CONSOLE [{msg.type}]: {msg.text}"))
+        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+        page.on("requestfailed", lambda req: print(f"REQ FAILED: {req.url} {req.failure}"))
+        # Deterministically reset DB to defect state before browser test
+        httpx.post(f"{API_URL}/api/v1/demo/reset?scenario=defect", timeout=10.0)
 
         # 1. Launch application
         page.goto(live_servers, timeout=30000)
-        page.wait_for_load_state("networkidle")
+        page.wait_for_load_state("domcontentloaded")
         assert "BHUVISTAAR" in page.content() or "BhuVistaar" in page.content()
 
         # 2. Select defect scenario via select dropdown
@@ -135,11 +140,11 @@ def test_browser_golden_workflow_e2e(live_servers):
         page.wait_for_timeout(500)
 
         # 5. Inspect Evidence tab
-        evidence_tab = page.locator("button:has-text('Evidence')").first
+        evidence_tab = page.locator("button:has-text('Evidence & Provenance')").first
         if evidence_tab.is_visible():
             evidence_tab.click()
             page.wait_for_timeout(500)
-            assert page.is_visible("text=EVID-") or page.is_visible("text=Evidence")
+            assert page.is_visible("text=Authoritative Evidence") or page.is_visible("text=VERIFIED SOURCES") or page.is_visible("text=SHA-256")
 
         # 6. Inspect Validation tab
         validation_tab = page.locator("button:has-text('Validation')").first
@@ -149,7 +154,7 @@ def test_browser_golden_workflow_e2e(live_servers):
             assert page.is_visible("text=BLOCKER") or page.is_visible("text=Rules") or page.is_visible("text=Validation")
 
         # 7. Inspect Review tab & Request Correction
-        review_tab = page.locator("button:has-text('Review')").first
+        review_tab = page.locator("button:has-text('Review & Gate C')").first
         if review_tab.is_visible():
             review_tab.click()
             page.wait_for_timeout(500)
@@ -158,15 +163,16 @@ def test_browser_golden_workflow_e2e(live_servers):
         corr_btn = page.locator("button:has-text('Request Correction')").first
         if corr_btn.is_visible():
             corr_btn.click()
-            page.wait_for_timeout(500)
-            # Fill correction in modal if open
-            modal_textarea = page.locator("textarea").first
-            if modal_textarea.is_visible():
-                modal_textarea.fill("Adjusting L01 ceiling elevation from 106.50m down to 106.00m to eliminate VRT-003 overlap.")
-                submit_corr = page.locator("button:has-text('Submit Correction')").first
-                if submit_corr.is_visible():
-                    submit_corr.click()
-                    page.wait_for_timeout(1000)
+            page.wait_for_selector(".modal-content", timeout=5000)
+            apply_btn = page.locator("button:has-text('Apply 106.00m')").first
+            if apply_btn.is_visible():
+                apply_btn.click()
+                page.wait_for_timeout(300)
+            
+            submit_btn = page.locator(".modal-content button[type='submit']").first
+            submit_btn.click()
+            page.locator(".modal-overlay").wait_for(state="detached", timeout=10000)
+            page.wait_for_timeout(1000)
 
         # 8. Observe Revision Change & Comparison tab
         rev_tab = page.locator("button:has-text('Revisions')").first

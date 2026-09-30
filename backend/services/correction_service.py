@@ -37,11 +37,25 @@ class CorrectionService:
         if not predecessor:
             raise RevisionNotFoundError(str(revision_id))
 
+        if request.role and request.role.upper() == "VIEWER":
+            raise ApprovalBlockedError(
+                f"Unauthorized role '{request.role}'. Applying corrections requires REVIEWER or ADMIN role.",
+                details={"role": request.role}
+            )
+
+        if request.actor_context == "AI_AUTONOMOUS" or "AI" in request.reviewer_id.upper():
+            raise ApprovalBlockedError(
+                "AI IS NOT THE AUTHORITY: Autonomous corrections by AI agents are strictly prohibited.",
+                details={"actor_context": request.actor_context, "reviewer_id": request.reviewer_id}
+            )
+
         # Determine corrected values, falling back to predecessor values
         z_min = float(request.z_min) if request.z_min is not None else predecessor.z_min
         z_max = float(request.z_max) if request.z_max is not None else predecessor.z_max
         if z_min >= z_max:
             raise ValueError(f"Corrected z_min ({z_min}) must be strictly less than z_max ({z_max}).")
+        if z_min < -100.0 or z_max > 5000.0:
+            raise ValueError(f"Elevation range ({z_min}m to {z_max}m) exceeds realistic terrestrial boundaries.")
 
         if request.footprint is not None:
             footprint_poly = shape(request.footprint)

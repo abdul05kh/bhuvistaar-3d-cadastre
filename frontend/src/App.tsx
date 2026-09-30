@@ -325,14 +325,9 @@ export const App: React.FC = () => {
     try {
       const res = await api.submitCorrection(revisionId, zMin, zMax, reason);
       showToast(`Correction applied! Created Revision ${res.status} with VUID ${res.prototype_vuid}`, 'success');
+      setIsCorrectionModalOpen(false);
 
       await loadWorkspaceData(DEFAULT_ULPIN);
-
-      const updatedL01 = units.find((u) => u.level_code === 'L01');
-      if (updatedL01) {
-        const revs = await api.getUnitRevisions(updatedL01.prototype_vuid);
-        setRevisions(revs);
-      }
       setActiveTab('revisions');
       setDemoStep(5);
     } catch (err: any) {
@@ -611,6 +606,9 @@ export const App: React.FC = () => {
                 padding: '0 12px',
                 gap: '4px',
                 overflowX: 'auto',
+                position: 'relative',
+                zIndex: 10,
+                flexShrink: 0,
               }}
             >
               <button

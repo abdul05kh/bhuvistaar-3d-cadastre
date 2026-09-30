@@ -9,6 +9,7 @@ class ReviewSubmitRequest(BaseModel):
     reason: str = Field(..., min_length=3, description="Officer's review justification or correction instructions")
     reviewer_id: str = Field(default="OFFICER-001", description="Reviewer/officer identifier")
     actor_context: str = Field(default="SIMULATED_PROTOTYPE", description="Simulated prototype actor context")
+    role: Optional[str] = Field(None, description="Operational role of actor (e.g. REVIEWER, ADMIN, VIEWER)")
 
 
 class ReviewDecisionResponse(BaseModel):
@@ -30,6 +31,7 @@ class CorrectionSubmitRequest(BaseModel):
     footprint: Optional[dict] = Field(None, description="Corrected GeoJSON Polygon footprint")
     semantic_type: Optional[str] = Field(None, description="Corrected semantic unit classification")
     actor_context: str = Field(default="SIMULATED_PROTOTYPE", description="Simulated prototype actor context")
+    role: Optional[str] = Field(None, description="Operational role of actor (e.g. REVIEWER, ADMIN, VIEWER)")
 
 
 class CorrectionResponse(BaseModel):

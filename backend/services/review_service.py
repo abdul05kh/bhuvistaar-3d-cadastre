@@ -24,6 +24,18 @@ class ReviewService:
         if not revision:
             raise RevisionNotFoundError(str(revision_id))
 
+        if request.role and request.role.upper() in ("VIEWER", "FIELD_OPERATOR"):
+            raise ApprovalBlockedError(
+                f"Unauthorized role '{request.role}'. Human review requires REVIEWER or ADMIN role.",
+                details={"role": request.role}
+            )
+
+        if request.actor_context == "AI_AUTONOMOUS" or "AI" in request.reviewer_id.upper():
+            raise ApprovalBlockedError(
+                "AI IS NOT THE AUTHORITY: Autonomous human review by AI agents is strictly prohibited.",
+                details={"actor_context": request.actor_context, "reviewer_id": request.reviewer_id}
+            )
+
         if revision.status == UnitStatus.APPROVED:
             raise ApprovalBlockedError(
                 "Cannot submit review on an already approved revision. Revisions are immutable.",
